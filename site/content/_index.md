@@ -140,7 +140,7 @@ is fixed.
 | NixOS | Unstable (nixpkgs) | 6.18.42 | 6.18.42 | 2026-08-08 | :white_check_mark: Fixed |
 | NixOS | 26.05 | 6.18.43 | 6.18.42 | 2026-08-05 | :white_check_mark: Fixed |
 | NixOS | 26.05 (small) | 6.18.43 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
-| Rocky Linux / RHEL | 10 | 6.12.0-211.44.1.el10_2 | — | — | :x: Vulnerable — no RHSA yet; `sctp` autoload blacklisted by default |
+| Rocky Linux / RHEL | 10 | 6.12.0-211.44.1.el10_2 | — | — | :x: Vulnerable — no RHSA yet |
 | Rocky Linux / RHEL | 9 | 5.14.0-687.36.1.el9_8 | — | — | :x: Vulnerable — no RHSA yet |
 | Rocky Linux / RHEL | 8 | 4.18.0-553.153.1.el8_10 | — | — | :x: Vulnerable — no RHSA yet |
 | Amazon Linux | 2023 (default) | 6.1.177-224.371 | — | — | :x: Vulnerable — no ALAS yet |
@@ -232,12 +232,14 @@ in-support lines — EL10 (6.12-based), EL9 (5.14-based), EL8 (4.18-based) —
 are in-window. Red Hat has **not** published a CVE page or RHSA for
 CVE-2026-64564 yet (the security page 404s four days after disclosure), so
 every stream is **vulnerable pending an advisory**. Default module posture
-differs by release, and only **EL10** helps: a stock Rocky 10 ships
-`/etc/modprobe.d/sctp-blacklist.conf` (`blacklist sctp`, plus
-`sctp_diag`), so the module does not **autoload** on an incidental SCTP
-socket — though an explicit `modprobe sctp` still loads it, so this does
-not close the local vector. Stock **Rocky 8 and 9 carry no such file** and
-autoload `sctp` on demand like most distributions. Rocky rebuilds RHEL's
+is uniform across the family: on all three releases `sctp.ko` is not in
+the base kernel packages but in **`kernel-modules-extra`**, and that
+package installs `/etc/modprobe.d/sctp-blacklist.conf` (`blacklist sctp`,
+plus `sctp_diag`) alongside it. So `sctp` never **autoloads** on a stock
+EL host — without `kernel-modules-extra` the module is absent entirely,
+and with it the blacklist suppresses autoload — though an explicit
+`modprobe sctp` still loads it wherever the package is installed, so this
+does not close the local vector. Rocky rebuilds RHEL's
 kernels unchanged, so its fixes track Red Hat's; AlmaLinux is typically
 the fastest rebuild and the leading indicator. Oracle Linux and
 CloudLinux track the RHEL determination.
@@ -271,8 +273,9 @@ lsmod | grep '^sctp'
 ```
 
 **Is SCTP autoload blocked?**  A `blacklist`/`install … /bin/false` entry
-(shipped by default on Rocky/RHEL 10, but not 8 or 9) means the datapath
-will not autoload — though an explicit `modprobe sctp` still can:
+(on Rocky/RHEL 8, 9, and 10 the `kernel-modules-extra` package that
+provides `sctp.ko` ships one) means the datapath will not autoload —
+though an explicit `modprobe sctp` still can:
 
 ```bash
 modprobe -n -v sctp 2>&1; grep -rE '(^|[[:space:]])(install|blacklist)[[:space:]]+sctp' /etc/modprobe.d /usr/lib/modprobe.d 2>/dev/null
@@ -464,9 +467,11 @@ readers never need it.
 - **Rocky / RHEL family**: `https://access.redhat.com/security/cve/CVE-2026-64564`
   returns HTTP 404 (no CVE page or RHSA yet). EL8/EL9/EL10 all carry
   SCTP and are in-window. Default module posture (verified on live
-  hosts): Rocky 10 ships
+  Rocky hosts, corroborated from BaseOS `filelists.xml.gz`): on all of
+  Rocky 8 / 9 / 10 `sctp.ko` ships in `kernel-modules-extra`, and every
+  build of that package also installs
   `/etc/modprobe.d/sctp-blacklist.conf` (`blacklist sctp`), suppressing
-  autoload; Rocky 8 and 9 ship no such file. Current
+  autoload — earlier entries here misread this as EL10-only. Current
   BaseOS kernels from Rocky repodata (`primary.xml.gz`, highest `rel`):
   Rocky 10 `6.12.0-211.44.1.el10_2`, Rocky 9 `5.14.0-687.36.1.el9_8`,
   Rocky 8 `4.18.0-553.153.1.el8_10`.

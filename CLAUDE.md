@@ -29,8 +29,9 @@ a [write-up][writeup].  **No public PoC** — the researchers report internal
 PoCs for local privesc and container escape but released no code.
 
 Reaching the bug needs the **`sctp` module in use** (autoloaded on first
-SCTP socket on most distros; autoload blacklisted by default on Rocky/RHEL
-**10** only — not 8 or 9), an association with the **ADD-IP / ASCONF**
+SCTP socket on most distros; on Rocky/RHEL 8/9/10 alike `sctp.ko` ships in
+`kernel-modules-extra`, which installs a `blacklist sctp` config, so it
+never autoloads there), an association with the **ADD-IP / ASCONF**
 extension negotiated, and a valid
 **AUTH** chunk (unless `net.sctp.addip_noauth_enable=1`).  These are
 reachability conditions, not verdict axes.
@@ -140,10 +141,13 @@ Summary, never as a column:
 
 - **`sctp` module in use.**  The bug is unreachable unless SCTP is loaded
   and an association is established.  On most distros `sctp` autoloads on
-  first use of an SCTP socket; Rocky/RHEL **10** ships
-  `/etc/modprobe.d/sctp-blacklist.conf` (`blacklist sctp`) so it does not
-  autoload there — but Rocky/RHEL **8 and 9 do not** (verified on live
-  hosts), and even on 10 an explicit `modprobe sctp` still loads it.
+  first use of an SCTP socket; on Rocky/RHEL **8, 9, and 10 alike**
+  `sctp.ko` ships in `kernel-modules-extra`, which always installs
+  `/etc/modprobe.d/sctp-blacklist.conf` (`blacklist sctp`) alongside it
+  (verified on live hosts and in BaseOS filelists), so `sctp` never
+  autoloads on a stock EL host — without the package the module is absent,
+  with it the blacklist suppresses autoload.  An explicit `modprobe sctp`
+  still loads it wherever the package is installed.
 - **ADD-IP / ASCONF + AUTH.**  The ASCONF path needs the ADD-IP extension
   negotiated and a valid AUTH chunk; `net.sctp.addip_noauth_enable=1` drops
   the AUTH requirement, widening reach.  Disabling ADD-IP
@@ -302,7 +306,8 @@ or the kernel series (`Vulnerable — 6.1 line` just repeats *Current
 kernel*); a plain `:x: Vulnerable` is the norm.  Keep a note only when it
 adds information — the awaited advisory (`no RHSA yet`, `no ALAS yet`), a
 non-obvious near-miss (`6.12.100 below the 6.12.101 first fix`), or a
-posture caveat (the EL10 autoload blacklist):
+posture caveat *specific to that row* (the family-wide EL autoload
+blacklist is prose, not a note):
 
 - `:white_check_mark: Fixed` — a kernel that carries the `9b2854f86f0b`
   backport (confirmed in changelog / advisory / kernel pin, not merely
@@ -317,10 +322,11 @@ posture caveat (the EL10 autoload blacklist):
 - `:warning: Staged` / `:warning: Mitigated` — not fully resolved: the
   fix is staged but not yet in the user-facing channel (merged /
   cherry-picked but not in a released package), **or** a distro default
-  *materially* reduces exposure.  Note the Rocky/RHEL 10 `blacklist sctp`
-  default does **not** qualify: it only suppresses on-demand autoload, and
-  an explicit `modprobe sctp` (the local attacker's path) still loads it —
-  so EL10 stays `:x:`, with the blacklist a prose caveat.  A mitigation is
+  *materially* reduces exposure.  Note the Rocky/RHEL `blacklist sctp`
+  default (all of 8/9/10, via `kernel-modules-extra`) does **not**
+  qualify: it only suppresses on-demand autoload, and an explicit
+  `modprobe sctp` (the local attacker's path) still loads it — so the EL
+  rows stay `:x:`, with the blacklist a prose caveat.  A mitigation is
   **not** a fix — it never earns `:white_check_mark:`.
 - `:grey_question: Unverified` — not yet verified (kernel pin or
   advisory not yet inspected).
@@ -592,10 +598,11 @@ For an unpatched kernel, whether the bug is reachable at all, and by whom,
 turns on three host properties:
 
 - **`sctp` module in use** — loaded and terminating associations.  On most
-  distros it autoloads on first use of an SCTP socket; Rocky/RHEL **10**
-  ships `blacklist sctp` so it does not autoload there (8 and 9 do not —
-  verified on live hosts).  A host with no SCTP traffic is not exposed
-  regardless of kernel version.
+  distros it autoloads on first use of an SCTP socket; on Rocky/RHEL
+  **8/9/10 alike** `sctp.ko` lives in `kernel-modules-extra`, which
+  installs `blacklist sctp` alongside it, so it never autoloads there
+  (verified on live hosts and in BaseOS filelists).  A host with no SCTP
+  traffic is not exposed regardless of kernel version.
 - **ADD-IP / ASCONF negotiated** — the DEL-IP path is only reached on an
   association that negotiated the ADD-IP extension
   (`net.sctp.addip_enable`).
@@ -819,12 +826,15 @@ before RHEL is.  Because the bug is ancient, all three EL lines (4.18 /
 "not affected".  At seed Red Hat has published **no** record for this CVE:
 `https://access.redhat.com/security/cve/CVE-2026-64564` returns HTTP 404,
 so every EL row is `:x:` Vulnerable, awaiting an RHSA.  Module posture,
-worth a prose note but **not** a verdict change, differs by release
-(verified on live hosts): Rocky/RHEL **10** ships
-`/etc/modprobe.d/sctp-blacklist.conf` (`blacklist sctp`, plus `sctp_diag`)
-so `sctp` does not autoload; Rocky/RHEL **8 and 9 ship no such file** and
-autoload on demand.  Even on 10 the blacklist is autoload-only — `modprobe
-sctp` still loads it — so it does not close the local vector.  Read the
+worth a prose note but **not** a verdict change, is uniform across the
+family (verified on live hosts and corroborated from BaseOS
+`filelists.xml.gz`): on Rocky/RHEL **8, 9, and 10 alike** `sctp.ko` ships
+in `kernel-modules-extra` — not the base kernel packages — and every build
+of that package installs `/etc/modprobe.d/sctp-blacklist.conf`
+(`blacklist sctp`, plus `sctp_diag`), so `sctp` never autoloads on a
+stock EL host.  The blacklist is autoload-only — `modprobe sctp` still
+loads it wherever the package is installed — so it does not close the
+local vector.  Read the
 CSAF/VEX record once it exists (the hydra securitydata
 API and the access.redhat.com CVE page are JS-rendered / 404 headlessly):
 
@@ -930,8 +940,9 @@ several distro sites are JS-rendered SPAs that don't render via WebFetch.
 - **EL family (Rocky/RHEL/Alma/Oracle/CloudLinux):** all of EL8 (4.18),
   EL9 (5.14), and EL10 (6.12.0) carry SCTP and are in-window; at seed Red
   Hat has published no record (404), so all are `:x:` awaiting an RHSA.
-  Only **EL10** ships a default `blacklist sctp` (autoload-only; 8 and 9
-  do not) — a prose note, not a verdict change.  AlmaLinux ships ahead of
+  All of **EL8/9/10** ship `sctp.ko` in `kernel-modules-extra`, which
+  installs a default `blacklist sctp` alongside it (autoload-only) — a
+  prose note, not a verdict change.  AlmaLinux ships ahead of
   Rocky/RHEL and is the leading indicator for the fix.
 - **Debian / Ubuntu / Proxmox VE:** every kernel here is in-window (the bug
   is ancient) — trixie/sid are fixed, bookworm/bullseye are not; PVE 9
@@ -943,9 +954,10 @@ several distro sites are JS-rendered SPAs that don't render via WebFetch.
   (≥ 6.18.42) is fixed.
 - **Mitigation vs fix:** blocking the `sctp` module or disabling ADD-IP
   (`net.sctp.addip_enable=0`) leaves the kernel hole, never
-  `:white_check_mark:`.  The EL10 autoload blacklist is autoload-only
-  (an explicit `modprobe sctp` defeats it), so it does not even earn
-  `:warning:` — EL10 stays `:x:` with a prose caveat.  A `:warning:`
+  `:white_check_mark:`.  The EL-family autoload blacklist (8/9/10, via
+  `kernel-modules-extra`) is autoload-only (an explicit `modprobe sctp`
+  defeats it), so it does not even earn `:warning:` — the EL rows stay
+  `:x:` with a prose caveat.  A `:warning:`
   needs a default that *materially* cuts exposure, not merely autoload.
 
 ## Known harmless warnings during build
