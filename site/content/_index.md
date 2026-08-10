@@ -125,8 +125,8 @@ is fixed.
 | Linux kernel | 6.1.x | 6.1.182 | — | — | :x: Vulnerable |
 | Linux kernel | 5.15.x | 5.15.215 | — | — | :x: Vulnerable |
 | Linux kernel | 5.10.x | 5.10.264 | — | — | :x: Vulnerable |
-| Debian | sid (unstable) | 7.1.7-1 | 7.1.7-1 | — | :white_check_mark: Fixed |
-| Debian | 13 (trixie) | 6.12.101-1 | 6.12.101-1 | — | :white_check_mark: Fixed |
+| Debian | sid (unstable) | 7.1.7-1 | 7.1.7-1 | 2026-08-07 | :white_check_mark: Fixed |
+| Debian | 13 (trixie) | 6.12.101-1 | 6.12.101-1 | 2026-08-06 | :white_check_mark: Fixed — trixie-security |
 | Debian | 12 (bookworm) | 6.1.180-1 | — | — | :x: Vulnerable |
 | Debian | 12 (6.12 opt-in) | 6.12.100-1~deb12u1 | — | — | :x: Vulnerable — 6.12.100 below the 6.12.101 first fix |
 | Debian | 11 (bullseye, LTS) | 5.10.262-1 | — | — | :x: Vulnerable |
@@ -433,7 +433,9 @@ readers never need it.
   backport). Opt-in kernels from their source-package tracker pages, both
   *vulnerable*: bookworm `linux-6.12` `6.12.100-1~deb12u1` (< 6.12.101
   first fix), bullseye `linux-6.1` `6.1.180-1~deb11u1` (6.1 line unpatched).
-  *Fixed since* upload dates not yet resolved from snapshot.debian.org.
+  *Fixed since* from snapshot.debian.org `first_seen`: sid `7.1.7-1`
+  2026-08-07, trixie `6.12.101-1` 2026-08-06 (shipped via
+  trixie-security).
 - **Proxmox VE** (`~/src/proxmox/pve-kernel`): patch
   `…-sctp-don-t-free-the-ASCONF-s-own-transport-in-DEL-IP.patch` present as
   `0059-…` in the `proxmox-kernel-7.0` tree (branch `master`) and `0034-…`
@@ -442,8 +444,11 @@ readers never need it.
   `7.0.14-11` (2026-08-07) is the *next* release, fixing the unrelated
   CVE-2026-68480 — and in **`6.8.12-41`** (2026-08-07 00:52) for PVE 8. The
   CVE identifiers were tagged in `38fa3e0` / `6daa7f0` (2026-08-07). The
-  first `pve-no-subscription` build publishing each is not yet confirmed
-  from `Packages.gz`.
+  `pve-no-subscription` `Packages.gz` indexes publish both first-fixed
+  builds (`proxmox-kernel-7.0.14-10-pve` in trixie,
+  `proxmox-kernel-6.8.12-41-pve` in bookworm); the current
+  `proxmox-kernel-7.0` / `-6.8` meta versions there are `7.0.14-11` and
+  `6.8.12-41`.
 - **NixOS** (`~/src/nixos/nixpkgs`): `linux_default = packages.linux_6_18`;
   every tracked ref resolves `6.18` at or above the `6.18.42` first-fixed
   release, so all seven rows are fixed. *Current kernel* from each ref's
