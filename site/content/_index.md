@@ -136,10 +136,10 @@ is fixed.
 | NixOS | master | 6.18.44 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
 | NixOS | release-26.05 | 6.18.44 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
 | NixOS | Unstable | 6.18.43 | 6.18.42 | 2026-08-04 | :white_check_mark: Fixed |
-| NixOS | Unstable (small) | 6.18.43 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
-| NixOS | Unstable (nixpkgs) | 6.18.42 | 6.18.42 | 2026-08-08 | :white_check_mark: Fixed |
+| NixOS | Unstable (small) | 6.18.44 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
+| NixOS | Unstable (nixpkgs) | 6.18.43 | 6.18.42 | 2026-08-08 | :white_check_mark: Fixed |
 | NixOS | 26.05 | 6.18.43 | 6.18.42 | 2026-08-05 | :white_check_mark: Fixed |
-| NixOS | 26.05 (small) | 6.18.43 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
+| NixOS | 26.05 (small) | 6.18.44 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
 | Rocky Linux / RHEL | 10 | 6.12.0-211.44.1.el10_2 | — | — | :x: Vulnerable — no RHSA yet |
 | Rocky Linux / RHEL | 9 | 5.14.0-687.36.1.el9_8 | — | — | :x: Vulnerable — no RHSA yet |
 | Rocky Linux / RHEL | 8 | 4.18.0-553.153.1.el8_10 | — | — | :x: Vulnerable — no RHSA yet |
@@ -229,9 +229,11 @@ different kernel from `nixos-unstable`.
 
 RHEL-family kernels are long-lived forks that carry SCTP, so all three
 in-support lines — EL10 (6.12-based), EL9 (5.14-based), EL8 (4.18-based) —
-are in-window. Red Hat has **not** published a CVE page or RHSA for
-CVE-2026-64564 yet (the security page 404s four days after disclosure), so
-every stream is **vulnerable pending an advisory**. Default module posture
+are in-window. Red Hat published a CVE assessment (VEX/CSAF record,
+initial release 2026-08-04) but has **not** shipped a fix — the record's
+only remediation is a module-blacklist workaround, with no `vendor_fix`
+entry or RHSA — so every stream is **vulnerable pending an advisory**.
+Default module posture
 is uniform across the family: on all three releases `sctp.ko` is not in
 the base kernel packages but in **`kernel-modules-extra`**, and that
 package installs `/etc/modprobe.d/sctp-blacklist.conf` (`blacklist sctp`,
@@ -475,17 +477,21 @@ readers never need it.
 - **NixOS** (`~/src/nixos/nixpkgs`): `linux_default = packages.linux_6_18`;
   every tracked ref resolves `6.18` at or above the `6.18.42` first-fixed
   release, so all seven rows are fixed. *Current kernel* from each ref's
-  `kernels-org.json` — `master` / `release-26.05` at `6.18.44` (branch
-  tips), `nixos-unstable` / `-small` and `nixos-26.05` / `-small` at
-  `6.18.43`, `nixpkgs-unstable` at `6.18.42` (channel `git-revision` pins).
+  `kernels-org.json` — `master` / `release-26.05` and `nixos-unstable-small`
+  / `nixos-26.05-small` at `6.18.44` (branch tips), `nixos-unstable` /
+  `nixos-26.05` at `6.18.43`, `nixpkgs-unstable` at `6.18.43` (channel
+  `git-revision` pins).
   *Fixed since*: the branch rows use the commit date of the 6.18.42 bump
   (`b658e06342e8` on master, `33565191d37a` on release-26.05, both
   2026-08-03); the channel rows use `scripts/nixos-first-shipped`
   (nixos-unstable 2026-08-04, nixos-unstable-small 2026-08-03,
   nixpkgs-unstable 2026-08-08, nixos-26.05 2026-08-05, nixos-26.05-small
   2026-08-03).
-- **Rocky / RHEL family**: `https://access.redhat.com/security/cve/CVE-2026-64564`
-  returns HTTP 404 (no CVE page or RHSA yet). EL8/EL9/EL10 all carry
+- **Rocky / RHEL family**: Red Hat's CSAF/VEX record
+  (`security.access.redhat.com/data/csaf/v2/vex/2026/cve-2026-64564.json`,
+  initial release 2026-08-04) lists 274 affected products across
+  EL6–EL10 and only a `workaround` remediation (module blacklist) — no
+  `vendor_fix` entry, so no RHSA yet. EL8/EL9/EL10 all carry
   SCTP and are in-window. Default module posture (verified on live
   Rocky hosts, corroborated from BaseOS `filelists.xml.gz`): on all of
   Rocky 8 / 9 / 10 `sctp.ko` ships in `kernel-modules-extra`, and every
