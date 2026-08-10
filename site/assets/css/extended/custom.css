@@ -42,15 +42,19 @@
 }
 
 /* Distribution-status table — keep every column except the last (Status)
-   on a single line, so version strings and labels like "11 (bullseye,
-   LTS)" don't wrap. Status keeps wrapping: it carries the longest text
-   (advisory IDs, short notes) and its own hanging indent. Targeting
-   `:not(:last-child)` works with and without the group-row transform —
-   that transform removes the Distribution cell (shifting the left-anchored
-   indices) while the no-JS fallback keeps it, but Status is the last cell
-   either way. Trade-off: the table can widen past the content column on
-   narrow viewports; the page scrolls horizontally rather than the columns
-   reflowing — acceptable for an information-dense reference. */
+   on a single line, so version strings, labels like "11 (bullseye,
+   LTS)", and two-word column headers ("First fixed") don't wrap. Status
+   keeps wrapping: it carries the longest text (advisory IDs, short
+   notes) and its own hanging indent. Targeting `:not(:last-child)`
+   works with and without the group-row transform — that transform
+   removes the Distribution cell (shifting the left-anchored indices)
+   while the no-JS fallback keeps it, but Status is the last cell either
+   way; a group heading row's single colspan th is its row's last child,
+   so headings stay free to wrap. Trade-off: the table can widen past
+   the content column on narrow viewports; the page scrolls horizontally
+   rather than the columns reflowing — acceptable for an
+   information-dense reference. */
+.post-content table.distros th:not(:last-child),
 .post-content table.distros td:not(:last-child) {
   white-space: nowrap;
 }

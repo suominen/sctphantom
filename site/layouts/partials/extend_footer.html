@@ -4,10 +4,7 @@
     // tables can't express colspan, so the source keeps a plain
     // Distribution column and this transform runs in the browser; with
     // JavaScript disabled the table renders as authored, with the
-    // Distribution column visible and repeated. The Release cells
-    // (leftmost after the transform) are tagged `nowrap` for
-    // custom.css — a positional CSS rule would hit the wrong column in
-    // the no-JS fallback.
+    // Distribution column visible and repeated.
     document.querySelectorAll('.post-content table.distros').forEach((table) => {
         const body = table.tBodies[0];
         const headRow = table.tHead?.rows[0];
@@ -31,12 +28,11 @@
                 body.insertBefore(tr, row);
             }
             cell.remove();
-            if (row.cells[0]) row.cells[0].classList.add('nowrap');
         }
         // Publish the header row's height so custom.css can stick the
         // group heading rows directly below the stuck column header;
-        // re-measure when the table resizes (header cells can wrap on
-        // narrow viewports).
+        // re-measure when the table resizes (font or zoom changes can
+        // move the header height).
         const setHeadH = () => table.style.setProperty(
             '--distros-thead-h',
             headRow.getBoundingClientRect().height + 'px');
