@@ -295,7 +295,14 @@ otherwise no-op run.
 
 A *Status* cell is the emoji plus its one-word verdict, optionally
 followed by an em dash and a short note (advisory ID, `LTS`, `no ALAS
-yet`) — longer caveats go in the `###` prose:
+yet`) — longer caveats go in the `###` prose.  **The note must say
+something the row's other columns do not.**  Don't restate the verdict
+(`Vulnerable — no fix yet` / `no backport yet` just repeats `Vulnerable`)
+or the kernel series (`Vulnerable — 6.1 line` just repeats *Current
+kernel*); a plain `:x: Vulnerable` is the norm.  Keep a note only when it
+adds information — the awaited advisory (`no RHSA yet`, `no ALAS yet`), a
+non-obvious near-miss (`6.12.100 below the 6.12.101 first fix`), or a
+posture caveat (the EL10 autoload blacklist):
 
 - `:white_check_mark: Fixed` — a kernel that carries the `9b2854f86f0b`
   backport (confirmed in changelog / advisory / kernel pin, not merely

@@ -131,15 +131,15 @@ is fixed.
 | Linux kernel | 6.18.x | 6.18.44 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed — LTS |
 | Linux kernel | 6.12.x | 6.12.103 | 6.12.101 | 2026-08-03 | :white_check_mark: Fixed — LTS |
 | Linux kernel | 6.6.x | 6.6.151 | 6.6.148 | 2026-08-03 | :white_check_mark: Fixed — LTS |
-| Linux kernel | 6.1.x | 6.1.182 | — | — | :x: Vulnerable — in-window, no backport yet |
-| Linux kernel | 5.15.x | 5.15.215 | — | — | :x: Vulnerable — in-window, no backport yet |
-| Linux kernel | 5.10.x | 5.10.264 | — | — | :x: Vulnerable — in-window, no backport yet |
+| Linux kernel | 6.1.x | 6.1.182 | — | — | :x: Vulnerable |
+| Linux kernel | 5.15.x | 5.15.215 | — | — | :x: Vulnerable |
+| Linux kernel | 5.10.x | 5.10.264 | — | — | :x: Vulnerable |
 | Debian | sid (unstable) | 7.1.7-1 | 7.1.7-1 | — | :white_check_mark: Fixed |
 | Debian | 13 (trixie) | 6.12.101-1 | 6.12.101-1 | — | :white_check_mark: Fixed |
-| Debian | 12 (bookworm) | 6.1.180-1 | — | — | :x: Vulnerable — 6.1 line, no fix yet |
+| Debian | 12 (bookworm) | 6.1.180-1 | — | — | :x: Vulnerable |
 | Debian | 12 (6.12 opt-in) | 6.12.100-1~deb12u1 | — | — | :x: Vulnerable — 6.12.100 below the 6.12.101 first fix |
-| Debian | 11 (bullseye, LTS) | 5.10.262-1 | — | — | :x: Vulnerable — 5.10 line, no fix yet |
-| Debian | 11 (6.1 opt-in) | 6.1.180-1~deb11u1 | — | — | :x: Vulnerable — 6.1 line, no fix yet |
+| Debian | 11 (bullseye, LTS) | 5.10.262-1 | — | — | :x: Vulnerable |
+| Debian | 11 (6.1 opt-in) | 6.1.180-1~deb11u1 | — | — | :x: Vulnerable |
 | Proxmox VE | 9 (default) | 7.0.14-11-pve | 7.0.14-10 | 2026-08-06 | :white_check_mark: Fixed — cherry-pick |
 | Proxmox VE | 8 (default) | 6.8.12-41-pve | 6.8.12-41 | 2026-08-07 | :white_check_mark: Fixed — cherry-pick |
 | NixOS | master | 6.18.44 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
