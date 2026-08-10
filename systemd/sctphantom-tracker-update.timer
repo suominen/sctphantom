@@ -1,0 +1,10 @@
+[Unit]
+Description=Run SCTPhantom tracker update twice daily
+
+[Timer]
+OnCalendar=*-*-* 05,17:50:00
+Persistent=true
+RandomizedDelaySec=2m
+
+[Install]
+WantedBy=timers.target

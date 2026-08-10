@@ -1,0 +1,166 @@
+#!/bin/sh
+# Local cron-driven SCTPhantom tracker auto-update.
+# Triggered by ~/.config/systemd/user/sctphantom-tracker-update.timer.
+# Logs land in the user journal:
+#   journalctl --user -u sctphantom-tracker-update
+#
+# Executed from the primary checkout (~/src/sctphantom), which carries
+# only reviewed, merged code. It drives the dedicated worktree at
+# ~/src/auto-update/sctphantom, checked out on branch `auto-update`:
+# each run merges origin/main forward into that branch and lets
+# headless Claude commit any updates back onto auto-update only.
+# Merges of auto-update -> main are manual.
+#
+# Running the copy inside the worktree instead would hand the agent
+# its own wrapper: it can commit to `auto-update`, so anything written
+# there executes on the next run, as this user, outside Claude Code's
+# permission scoping. Keeping the code that runs (CODE) and the tree
+# the agent writes (WORKTREE) strictly apart is what prevents that, so
+# the guards below refuse to run if the two ever coincide.
+#
+# The worktree path can be overridden by argument, for testing against
+# a scratch checkout.
+
+set -eu
+
+CODE="$(realpath "$(dirname "${0}")/..")"
+SLUG="${CODE##*/}"
+WORKTREE="${1:-${HOME}/src/auto-update/${SLUG}}"
+
+if [ ! -d "${WORKTREE}/.git" ] && [ ! -f "${WORKTREE}/.git" ]
+then
+  echo "${0##*/}: no git worktree at ${WORKTREE}" 1>&2
+  exit 1
+fi
+
+if [ "$(realpath "${WORKTREE}")" = "${CODE}" ]
+then
+  echo "${0##*/}: refusing to run from the agent-writable worktree;" \
+       'invoke scripts/auto-update from the primary checkout' 1>&2
+  exit 1
+fi
+
+cd "${WORKTREE}"
+
+# Identify this tracker on the first line of every run, so syslog
+# summaries that aggregate several trackers' output (all logged under
+# the generic `auto-update` process name) can be told apart.
+echo "SCTPhantom tracker auto-update starting ($(date -u +%FT%TZ))"
+
+# Refresh the local clones the agent reads via origin/... refs.
+# Doing this here, rather than in the prompt, makes the refresh
+# deterministic — a headless agent occasionally skips these and
+# then reports findings against stale remote-tracking refs.
+#
+# The tracker jobs run minutes apart and share these clones, so
+# skip a clone any of them refreshed within the last 2 hours. git
+# touches .git/FETCH_HEAD on every fetch, even a no-op one, so its
+# mtime is "when we last checked"; a clone never fetched has no
+# FETCH_HEAD and counts as stale, and a failed fetch leaves it
+# untouched, so the next job retries instead of skipping.
+fetch_if_stale()
+{
+  local repo label
+  repo="${1}"
+  label="${2}"
+  shift 2
+
+  if [ -n "$(find "${repo}/.git/FETCH_HEAD" -mmin -120 2>/dev/null)" ]
+  then
+    echo "Skipping ${label} fetch (refreshed within 2 hours)"
+    return 0
+  fi
+  git -C "${repo}" fetch --quiet "${@}" ||
+    echo "${0##*/}: warn: ${label} fetch failed" 1>&2
+}
+
+fetch_if_stale "${HOME}/src/linux/stable" linux-stable --all --tags
+# net: the netdev "net" tree, where networking fixes (SCTP among them)
+# land and get tagged for stable before they reach Linus. Handy for
+# confirming a backport's provenance early.
+fetch_if_stale "${HOME}/src/linux/net" linux-net origin
+# vulns: the kernel CVE -> fix-commit / fixed-version database. Keeps the
+# per-branch dyad lookup for CVE-2026-64564 fresh.
+fetch_if_stale "${HOME}/src/linux/vulns" linux-vulns origin
+fetch_if_stale "${HOME}/src/nixos/nixpkgs" nixpkgs origin
+# pve-kernel: Proxmox's kernel packaging repo, where every security
+# cherry-pick is listed by name/CVE in debian/changelog. Shared like
+# the others, so the agent reads it via origin/... refs instead of
+# cloning it per run into the worktree.
+fetch_if_stale "${HOME}/src/proxmox/pve-kernel" pve-kernel origin
+
+git fetch --quiet origin
+
+# Clear any scratch a previous run's agent left behind. Untracked
+# debris trips the dirty-tree check below, and every later run then
+# refuses to start until someone removes it by hand -- a silent
+# stall. git clean catches any name (the old .tmp-* glob missed
+# arbitrarily-named curl -o leftovers) while leaving ignored files
+# and modified tracked files alone, so an interrupted run still
+# stops at the dirty-tree check for a human to look at.
+git clean -fd
+
+if [ -n "$(git status --porcelain)" ]
+then
+  echo 'Working tree dirty; refusing to run. Clean it up and retry.' 1>&2
+  exit 1
+fi
+
+git switch --quiet auto-update
+git merge --quiet --no-edit origin/main
+
+# Everything the agent can commit to `auto-update` is untrusted input,
+# including any file that would later run as code or grant permissions.
+# The wrapper and the prompt are read from CODE rather than from here,
+# and the run is refused outright if the merged worktree's executable
+# surface differs from origin/main. Diffing the working tree (not just
+# HEAD) covers a committed edit and an uncommitted one alike. CLAUDE.md
+# is in that surface because the agent loads it as project
+# instructions, and .mcp.json because it can name commands to run.
+#
+# A refusal is a stop-and-look, not a transient: it means something
+# rewrote code on the branch that only the tracker content should
+# reach. Inspect the diff before clearing it.
+if ! git diff --quiet origin/main -- scripts .claude CLAUDE.md .mcp.json
+then
+  echo 'Worktree code/config differs from origin/main; refusing to' \
+       'run. Inspect it:' 1>&2
+  echo "  git -C ${WORKTREE} diff origin/main --" \
+       'scripts .claude CLAUDE.md .mcp.json' 1>&2
+  exit 1
+fi
+
+# Headless run. Permission scope (Read/Edit the tracker, WebFetch and
+# curl the sources, zcat/gunzip for the gzipped package indexes, git +
+# date for the commit step) goes in --settings JSON because
+# --allowed-tools on the CLI silently ignores Bash patterns.
+# `default` mode under -p with no TTY refuses anything outside the
+# allowlist without prompting.
+#
+# Scratch files live in the worktree: Claude Code confines Bash file
+# reads to the session working directory, so /tmp scratch can be
+# written but never read back. rm is allowlisted so the agent can
+# remove its own scratch before committing; Claude Code confines rm
+# the same way, so the grant cannot touch the shared clones or
+# anything else outside the worktree. The git clean above sweeps
+# any scratch files a run forgets.
+#
+# The git rules are enumerated per subcommand rather than `git:*` on
+# purpose. Read-only commands are auto-classified as safe and run
+# either way, but a mutating one needs a matching rule -- so with no
+# rule for it, publishing is refused by the permission system rather
+# than only by prose in the prompt. `gh` is absent for the same
+# reason, so no PR can be opened either.
+#
+# The deny rules keep the agent from rewriting its own executable
+# surface mid-run; the guard above only sees the tree as it stood at
+# the start. Only Edit(...) rules apply to file writes -- a Write(...)
+# rule is ignored (Claude Code warns when one is present).
+exec claude -p \
+  --model claude-sonnet-5 \
+  --permission-mode default \
+  --settings '{"permissions":{"allow":["Read","Edit","WebFetch","Bash(date:*)","Bash(rm:*)","Bash(curl:*)","Bash(zcat:*)","Bash(gunzip:*)","Bash(git add:*)","Bash(git commit:*)","Bash(git diff:*)","Bash(git log:*)","Bash(git show:*)","Bash(git status:*)","Bash(git describe:*)"],"deny":["Edit(./scripts/**)","Edit(./.claude/**)"]}}' \
+  --output-format text \
+  --no-session-persistence \
+  --max-budget-usd 10 \
+  < "${CODE}/scripts/auto-update-prompt.txt"

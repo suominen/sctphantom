@@ -1,0 +1,505 @@
+---
+title: "SCTPhantom — SCTP ASCONF transport use-after-free"
+description: "Linux kernel SCTP ASCONF DEL-IP use-after-free (CVE-2026-64564, SCTPhantom) — remote-triggerable transport UAF, local privilege escalation and container-to-host escape — distro patch status tracker"
+layout: "single"
+date: 2026-08-10
+lastmod: 2026-08-10
+cover:
+  image: "sctphantom-tracker.png"
+  alt: "SCTPhantom — Linux kernel SCTP ASCONF transport use-after-free tracker"
+  hiddenInSingle: true
+---
+
+## Summary
+
+| Field | Detail |
+|---|---|
+| CVE ID | CVE-2026-64564 |
+| Alias | `SCTPhantom` (the name the [write-up][writeup] uses) |
+| Component | Kernel: SCTP ASCONF DEL-IP processing — reuse of the ASCONF chunk's own cached transport (`sctp_process_asconf` / `sctp_process_asconf_param`, `net/sctp/sm_make_chunk.c`) |
+| Type | Use-after-free of an `sctp_transport`. A single ASCONF carrying `[Address Parameter L][DEL-IP L][DEL-IP 0.0.0.0]` frees `asconf->transport` (via `sctp_assoc_rm_peer()`, RCU-deferred), then the wildcard DEL-IP reuses the dangling pointer in `sctp_assoc_set_primary()` / `sctp_assoc_del_nonprimary_peers()`, planting freed memory into `asoc->peer.primary_path` / `active_path` |
+| Impact | Kernel heap UAF: a reproducible oops/panic (**DoS**), and per the discoverers a **local privilege escalation to root** and **container-to-host escape**. The chunk is processed in the receive/state-machine path, so it is reachable by any SCTP peer that completes an association with the ADD-IP (ASCONF) extension negotiated |
+| Upstream fix | [`9b2854f86f0b`][fix] (*sctp: don't free the ASCONF's own transport in DEL-IP processing*); first in **v7.2-rc5** |
+| Introduced | [`42e30bf3463c`][intro] in **v2.6.25** (2008) — the ASCONF DEL-IP handler has cached-and-reused the chunk's transport since SCTP ADD-IP support landed, so **essentially every SCTP-capable kernel is in-window** |
+| Affected window | **2.6.25 through 7.1** without the backport (and 7.2 before `-rc5`). Fixed in **v7.2-rc5** and the **6.6 / 6.12 / 6.18 / 7.1** stable backports; the **6.1, 5.15, and 5.10** LTS lines have **no fix yet** (per-branch *First fixed* below) |
+| Discoverer | Corvus AI (Tencent Zhuque Lab / TencentOS Security Team) |
+| Public disclosure | 2026-08-06 ([Tencent Matrix write-up][writeup]) |
+| Public PoC | None public. The researchers report internal PoCs demonstrating local privilege escalation and container-to-host escape |
+| KEV / EPSS / CVSS | Two scores exist. **Kernel CNA:** CVSS 3.1 **9.8 CRITICAL** (`AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H`), scoring the bug from a *remote SCTP peer*. **Discoverers:** CVSS 4.0 **8.5 HIGH** (`AV:L/AC:L/AT:N/PR:L/UI:N/VC:H/VI:H/VA:H/…`), scoring the *demonstrated local privilege-escalation* primitive. Not in KEV; EPSS not yet published. See *Scoring* below |
+| Reachability | An established SCTP association with the **ADD-IP / ASCONF** extension (`SCTP_ASCONF_SUPPORTED`) negotiated, and a valid AUTH chunk (SCTP-AUTH keys, or `net.sctp.addip_noauth_enable=1`). On most distributions the `sctp` module is **not loaded until an application uses SCTP** — see *Detection* and *Mitigation* |
+{.summary}
+
+> :information_source: **Two vantage points, one bug.** The kernel CNA
+> scores SCTPhantom as **network-reachable** (`AV:N`): a remote peer that
+> completes an SCTP association with ADD-IP negotiated sends the crafted
+> ASCONF, and nothing on the target needs local access. The discoverers
+> score it **locally** (`AV:L`) because what they *demonstrated* is a
+> privilege-escalation and container-escape primitive built on the same
+> use-after-free. Both are correct at different layers — the trigger is a
+> received packet; the weaponised impact shown is local root. Treat any
+> host that terminates untrusted SCTP associations as remotely reachable,
+> and any multi-tenant host as exposed to local escalation.
+
+## How the exploitation chain works
+
+SCTP is multi-homed: one association can span several peer IP addresses,
+each represented by an `sctp_transport`. The **ADD-IP** extension (RFC 5061)
+lets a peer add and remove those addresses at runtime by sending **ASCONF**
+chunks, processed in the receive path by `sctp_process_asconf()`.
+
+`sctp_process_asconf()` caches the transport the chunk arrived on in
+`asconf->transport` (set once in `sctp_rcv()`). When an ASCONF is instead
+located through its **Address Parameter** by `__sctp_rcv_asconf_lookup()`,
+that cached transport corresponds to the *Address Parameter*, which **need
+not be the packet's source address**.
+
+`sctp_process_asconf_param()` already refuses a DEL-IP aimed at the packet
+*source* address (the ADD-IP D8 rule, `SCTP_ERROR_DEL_SRC_IP`) — but nothing
+protected `asconf->transport` itself. A single ASCONF can carry, in order:
+
+```
+[Address Parameter L]  [DEL-IP L]  [DEL-IP 0.0.0.0]
+```
+
+where `L` differs from the source address:
+
+1. **`[Address Parameter L]`** selects transport `L` as `asconf->transport`.
+2. **`[DEL-IP L]`** passes the D8 source-address check (the source isn't
+   `L`) and calls `sctp_assoc_rm_peer()` on transport `L` — the very
+   transport `asconf->transport` still points at — **freeing it**
+   (RCU-deferred).
+3. **`[DEL-IP 0.0.0.0]`** (wildcard) then reuses the now-dangling
+   `asconf->transport`: `sctp_assoc_set_primary()` dereferences the freed
+   object (`->ipaddr`, `->state`) and plants the dangling pointer into
+   `asoc->peer.primary_path` / `active_path`, while
+   `sctp_assoc_del_nonprimary_peers()` removes every *real* transport,
+   keeping only the pointer that is no longer on the list. The association
+   is left with `transport_count == 0` and `primary_path` / `active_path`
+   pointing at freed memory.
+
+From there the freed `sctp_transport` is a classic reclaim-and-reuse
+primitive: a following dereference of the dangling `primary_path` faults
+(the oops/panic path), or, with heap grooming, the freed slot is reclaimed
+by attacker-controlled data for a read/write primitive — which the
+[write-up][writeup] escalates to root and out of a container.
+
+The fix, [`9b2854f86f0b`][fix], rejects a DEL-IP that targets the transport
+the ASCONF is being processed against, mirroring the existing
+source-address guard, so the wildcard branch can never reuse a freed
+transport.
+
+> :warning: Because the introducing commit landed in **v2.6.25 (2008)**,
+> this is **not** a recent-regression bug: there is no "too old to be
+> affected" kernel. Any kernel with SCTP ADD-IP support, from 2.6.25 up to
+> the fixed point releases below, is in-window. A row is safe only by
+> carrying the [`9b2854f86f0b`][fix] fix — not by being old.
+
+## Vulnerable commit range
+
+| Commit | Role | Description |
+|---|---|---|
+| [`42e30bf3463c`][intro] | Introduced | ASCONF DEL-IP support (**v2.6.25**, 2008) — `sctp_process_asconf()` caches the chunk's transport and the DEL-IP path can free it while the wildcard branch still holds the pointer. |
+| [`9b2854f86f0b`][fix] | Fixed | *sctp: don't free the ASCONF's own transport in DEL-IP processing* — rejects a DEL-IP targeting `asconf->transport`, mirroring the source-address guard; first released in **v7.2-rc5**. |
+
+The reachable lifetime runs from **v2.6.25** through **v7.1** (and 7.2
+before `-rc5`). Unlike a backported-regression CVE, no in-support kernel
+predates the flaw, so the *only* not-affected kernels are those that carry
+the fix.
+
+## Patch status
+
+A row is **Fixed** only if its kernel carries the [`9b2854f86f0b`][fix]
+backport; every SCTP-capable kernel without it is in-window and
+**Vulnerable**. The first group is the upstream kernel; the rest are a
+focused set of x86-64 distributions, with per-distribution detail in the
+sections that follow. *First fixed* and *Fixed since* stay `—` until a row
+is fixed.
+
+> :information_source: **Seed state (2026-08-10).** The **Linux kernel**,
+> **Debian**, **Proxmox VE**, and **NixOS** rows are verified against
+> upstream git, the Debian security tracker, the `pve-kernel` tree, and the
+> nixpkgs channel pins respectively. The **Rocky / RHEL** and **Amazon
+> Linux** rows carry each family's base kernel line and the
+> *no-advisory-yet* verdict true four days after disclosure — the
+> twice-daily auto-update pins their exact point releases and flips them
+> when an RHSA/ALAS lands.
+
+| Distribution | Release | Current kernel | First fixed | Fixed since | Status |
+|---|---|---|---|---|---|
+| Linux kernel | mainline | 7.2-rc7 | 7.2-rc5 | 2026-07-26 | :white_check_mark: Fixed — carries `9b2854f86f0b` |
+| Linux kernel | 7.1.x | 7.1.8 | 7.1.6 | 2026-08-03 | :white_check_mark: Fixed |
+| Linux kernel | 6.18.x | 6.18.44 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed — LTS |
+| Linux kernel | 6.12.x | 6.12.103 | 6.12.101 | 2026-08-03 | :white_check_mark: Fixed — LTS |
+| Linux kernel | 6.6.x | 6.6.151 | 6.6.148 | 2026-08-03 | :white_check_mark: Fixed — LTS |
+| Linux kernel | 6.1.x | 6.1.182 | — | — | :x: Vulnerable — in-window, no backport yet |
+| Linux kernel | 5.15.x | 5.15.215 | — | — | :x: Vulnerable — in-window, no backport yet |
+| Linux kernel | 5.10.x | 5.10.264 | — | — | :x: Vulnerable — in-window, no backport yet |
+| Debian | sid (unstable) | 7.1.7-1 | 7.1.7-1 | — | :white_check_mark: Fixed |
+| Debian | 13 (trixie) | 6.12.101-1 | 6.12.101-1 | — | :white_check_mark: Fixed |
+| Debian | 12 (bookworm) | 6.1.180-1 | — | — | :x: Vulnerable — 6.1 line, no fix yet |
+| Debian | 12 (6.12 opt-in) | 6.12.100-1~deb12u1 | — | — | :x: Vulnerable — 6.12.100 below the 6.12.101 first fix |
+| Debian | 11 (bullseye, LTS) | 5.10.262-1 | — | — | :x: Vulnerable — 5.10 line, no fix yet |
+| Debian | 11 (6.1 opt-in) | 6.1.180-1~deb11u1 | — | — | :x: Vulnerable — 6.1 line, no fix yet |
+| Proxmox VE | 9 (default) | 7.0.14-11-pve | 7.0.14-10 | 2026-08-06 | :white_check_mark: Fixed — cherry-pick |
+| Proxmox VE | 8 (default) | 6.8.12-41-pve | 6.8.12-41 | 2026-08-07 | :white_check_mark: Fixed — cherry-pick |
+| NixOS | master | 6.18.44 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
+| NixOS | release-26.05 | 6.18.44 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
+| NixOS | Unstable | 6.18.43 | 6.18.42 | 2026-08-04 | :white_check_mark: Fixed |
+| NixOS | Unstable (small) | 6.18.43 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
+| NixOS | Unstable (nixpkgs) | 6.18.42 | 6.18.42 | 2026-08-08 | :white_check_mark: Fixed |
+| NixOS | 26.05 | 6.18.43 | 6.18.42 | 2026-08-05 | :white_check_mark: Fixed |
+| NixOS | 26.05 (small) | 6.18.43 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
+| Rocky Linux / RHEL | 10 | 6.12.0-211.44.1.el10_2 | — | — | :x: Vulnerable — no RHSA yet; `sctp` autoload blacklisted by default |
+| Rocky Linux / RHEL | 9 | 5.14.0-687.36.1.el9_8 | — | — | :x: Vulnerable — no RHSA yet; `sctp` autoload blacklisted by default |
+| Rocky Linux / RHEL | 8 | 4.18.0-553.153.1.el8_10 | — | — | :x: Vulnerable — no RHSA yet; `sctp` autoload blacklisted by default |
+| Amazon Linux | 2023 (default) | 6.1.177-224.371 | — | — | :x: Vulnerable — no ALAS yet |
+| Amazon Linux | 2023 (6.12 opt-in) | 6.12.95-124.187 | — | — | :x: Vulnerable — no ALAS yet |
+| Amazon Linux | 2023 (6.18 opt-in) | 6.18.39-79.141 | — | — | :x: Vulnerable — no ALAS yet |
+{.distros}
+
+### Linux kernel
+
+The fix reached Linus in **v7.2-rc5** (tagged 2026-07-26) and the kernel
+CNA backported it across the maintained stable lines on **2026-08-03**:
+**6.6.148** (`fedeb4468987`), **6.12.101** (`74e8f3e7114f`), **6.18.42**
+(`85aca407c560`), and **7.1.6** (`d136b29bf91d`) — each the same fix by
+subject, confirmed present on its `linux-*.y` branch, with `finger_banner`
+current point releases at or above them.
+
+The **6.1, 5.15, and 5.10** long-term lines are the exposure. The fix is
+**not** present on `linux-6.1.y`, `linux-5.15.y`, or `linux-5.10.y`, and
+because the bug dates to 2.6.25 all three are fully in-window: a host on
+6.1.182, 5.15.215, or 5.10.264 is vulnerable and stays so until its branch
+picks up the backport. These rows should flip in a later stable batch;
+until then, verify by subject before assuming a fix.
+
+### Debian
+
+Debian's status splits on which upstream branch each suite tracks.
+**trixie** (Debian 13) ships `6.12.101-1`, which is exactly the 6.12
+branch's first-fixed release, so it is **fixed**; **sid** at `7.1.7-1`
+(above the 7.1 branch's 7.1.6 first-fixed) is **fixed** too. **bookworm**
+(`6.1.180-1`) rides the 6.1 line and **bullseye** (`5.10.262-1`) the 5.10
+line — neither branch has the backport yet, so both are **vulnerable**, as
+the Debian security tracker records. When the 6.1.y and 5.10.y stable lines
+gain the fix (or Debian cherry-picks it), the bookworm and bullseye rows
+follow.
+
+Both older suites also offer an **opt-in newer kernel**, and both are
+**vulnerable** here too. bookworm's `linux-6.12` (bookworm-security,
+`6.12.100-1~deb12u1`) sits one point release *below* the 6.12 branch's
+`6.12.101` first fix — the same package cleared earlier 6.12 CVEs but not
+this one — and bullseye's `linux-6.1` (bullseye-security,
+`6.1.180-1~deb11u1`) rides the still-unpatched 6.1 line. Each opt-in row's
+verdict is independent of its suite's default row.
+
+SCTP itself is not built into Debian's kernel image but shipped as the
+`sctp` module, autoloaded on first use of an `AF_INET`/`IPPROTO_SCTP`
+socket; it is not blacklisted by default, so a host running any SCTP
+service loads the vulnerable code.
+
+### Proxmox VE
+
+Proxmox ships its own kernels, so Debian's status does not carry over. Both
+maintained series backport the SCTP fix (a
+`…-sctp-don-t-free-the-ASCONF-s-own-transport-in-DEL-IP.patch`): **PVE 9's
+`proxmox-kernel-7.0`** first carries it in **`7.0.14-10`** (2026-08-06), and
+**PVE 8's `proxmox-kernel-6.8`** in **`6.8.12-41`** (2026-08-07). The 6.8
+series is the familiar Proxmox pattern: although the upstream 6.8 base is
+old, the Ubuntu-derived kernel carries SCTP and receives the cherry-pick, so
+a pre-fix Proxmox series cannot be assumed safe by base version alone. The
+*Current kernel* cells read the git changelog head, which leads apt; the
+exact `pve-no-subscription` build that publishes each fix is confirmed at
+the first auto-update run.
+
+### NixOS
+
+Every tracked ref's default `linuxPackages` is `linux_6_18`, at or above
+the 6.18 branch's `6.18.42` first-fixed release, so all of these rows are
+**fixed**; they differ only in which point release each has reached. Kernel
+updates land on nixpkgs `master` first, and each channel publishes them
+once its Hydra jobset passes. A channel can therefore sit a few days behind
+`master`, and an unstable channel is not necessarily ahead of a release
+channel. The `-small` channels (`nixos-unstable-small`, `nixos-26.05-small`)
+are gated on a reduced jobset and pick up kernel updates fastest. A host
+that overrides the default to an unpatched series (`linux_6_1` /
+`linux_5_15` / `linux_5_10`) is still vulnerable.
+
+The `master` and `release-26.05` rows are the git branches the fix lands
+on. They are not Hydra-gated, so they carry a kernel bump from the moment
+the commit lands — typically a day or more before a channel republishes it,
+which is what the *Fixed since* dates down the group show. They are
+development branches, not deployment targets.
+
+Flake inputs map onto these directly.
+`github:NixOS/nixpkgs/nixos-unstable` tracks the `nixos-unstable` channel —
+the GitHub channel branches are updated to exactly the published channel
+pins — and a bare `github:NixOS/nixpkgs` with no ref follows `master`. A
+bare `nixpkgs` registry input resolves by default to `nixpkgs-unstable`,
+which is a separate channel aimed at Nix users on other operating systems
+rather than at NixOS, so it is not gated on the NixOS tests and can hold a
+different kernel from `nixos-unstable`.
+
+### Rocky Linux / RHEL family
+
+RHEL-family kernels are long-lived forks that carry SCTP, so all three
+in-support lines — EL10 (6.12-based), EL9 (5.14-based), EL8 (4.18-based) —
+are in-window. Red Hat has **not** published a CVE page or RHSA for
+CVE-2026-64564 yet (the security page 404s four days after disclosure), so
+every stream is **vulnerable pending an advisory**. One real mitigating
+factor: RHEL and its rebuilds ship `sctp` on the module **blacklist** by
+default (`/etc/modprobe.d/*sctp*`, `install sctp /bin/false`), so the
+datapath is not autoloaded unless an administrator or an SCTP-using
+application enables it. Rocky rebuilds RHEL's kernels unchanged, so its
+verdicts track Red Hat's; AlmaLinux is typically the fastest rebuild and
+the leading indicator. Oracle Linux and CloudLinux track the RHEL
+determination.
+
+### Amazon Linux
+
+No ALAS has been issued for this CVE, so every AL2023 kernel stream — the
+default `kernel` (`6.1.177-224.371`), the `kernel6.12` (`6.12.95-124.187`)
+and `kernel6.18` (`6.18.39-79.141`) opt-ins — remains **vulnerable**
+pending an Amazon cherry-pick. All three lines are in-window; the 6.12 and
+6.18 opt-ins turn fixed only once they cross their branches' `6.12.101` /
+`6.18.42` first-fixed releases, and the 6.1 default only when the 6.1.y
+line itself is patched.
+
+## Detection
+
+**Is the running kernel in the affected window and missing the fix?**
+Every SCTP-capable kernel is in-window; compare the running kernel against
+the *Patch status* table's *First fixed* column for its series:
+
+```bash
+uname -r
+```
+
+**Is the `sctp` module available or loaded?**  The bug is only reachable
+when SCTP is in use. On most distributions `sctp` autoloads on first use of
+an SCTP socket:
+
+```bash
+lsmod | grep '^sctp'
+```
+
+**Is SCTP autoload blocked?**  A `blacklist`/`install … /bin/false` entry
+(the RHEL-family default) means the datapath will not autoload:
+
+```bash
+modprobe -n -v sctp 2>&1; grep -rE '(^|[[:space:]])(install|blacklist)[[:space:]]+sctp' /etc/modprobe.d /usr/lib/modprobe.d 2>/dev/null
+```
+
+**Is a service actually terminating SCTP associations?**  Reaching the
+ASCONF path needs an established association, so an SCTP listener is the
+real exposure (telephony/SIGTRAN, some RADIUS/Diameter and load-balancer
+stacks, `lksctp` test tools):
+
+```bash
+ss -a --sctp 2>/dev/null || ss -a | grep -i sctp
+```
+
+**Is ASCONF (ADD-IP) enabled?**  The chunk path is gated by the ADD-IP
+sysctls; `addip_noauth_enable=1` additionally drops the AUTH requirement,
+widening who can send the ASCONF:
+
+```bash
+sysctl net.sctp.addip_enable net.sctp.addip_noauth_enable
+```
+
+## Public PoC
+
+There is **no public exploit**. The [write-up][writeup] from Tencent Zhuque
+Lab describes the primitive and reports internal proof-of-concept exploits
+for local privilege escalation and container-to-host escape, but does not
+release code. Absence of a public PoC is not safety — the mechanism is
+fully described and the fix is public, so a working exploit is well within
+reach; patch rather than rely on obscurity.
+
+## Mitigation
+
+The real fix is a patched kernel (the [`9b2854f86f0b`][fix] backport).
+Until one is installed, the exposure is narrowed by keeping the SCTP
+datapath unreachable — none of these is a fix.
+
+### Disable the `sctp` module (if you don't use SCTP)
+
+Most hosts never use SCTP. Where it is genuinely unused, block the module
+so the vulnerable code cannot be autoloaded — this also blocks privileged
+and container callers, unlike the sysctl below. Unload it if present but
+idle:
+
+```bash
+sudo modprobe -r sctp
+```
+
+Then keep it from being (re)loaded, including on-demand autoload;
+`install sctp /bin/false` is surer than a plain `blacklist sctp`, which
+only suppresses alias-based autoloading:
+
+```bash
+echo 'install sctp /bin/false' | sudo tee /etc/modprobe.d/sctphantom.conf
+```
+
+Only do this where SCTP is genuinely unused — telephony/SIGTRAN gateways,
+some Diameter/RADIUS and SS7 stacks, and `lksctp`-based tooling need it and
+must fall back to the measures below.
+
+### Require AUTH for ASCONF (do not run `addip_noauth`)
+
+If SCTP with ADD-IP is required, make sure `net.sctp.addip_noauth_enable`
+is **0** (the default) so an ASCONF must carry a valid AUTH chunk, forcing
+an attacker to complete SCTP-AUTH key negotiation before reaching the
+handler:
+
+```bash
+sudo sysctl -w net.sctp.addip_noauth_enable=0
+echo 'net.sctp.addip_noauth_enable = 0' | sudo tee /etc/sysctl.d/99-sctphantom.conf
+```
+
+This does not close the bug for a peer that completes AUTH, and it does
+nothing where ADD-IP is not needed at all — there, disable ADD-IP entirely
+with `net.sctp.addip_enable=0`.
+
+### Restrict who can reach the SCTP listener
+
+Where the service must stay up, limit exposure at the network edge:
+firewall SCTP (`-p sctp`) to known peers, terminate associations only from
+trusted networks, and avoid exposing SCTP listeners to untrusted clients.
+This shrinks the remote attack surface but leaves a trusted-peer or local
+path open.
+
+## Risk notes
+
+- **SCTP services are the remote surface:** any host terminating SCTP
+  associations with ADD-IP negotiated — telephony/SIGTRAN, some Diameter,
+  RADIUS, and SS7 stacks — can be driven into the UAF by a peer. Treat
+  untrusted-peer SCTP as remotely exploitable.
+- **Multi-tenant and container hosts:** the demonstrated impact is local
+  privilege escalation and container-to-host escape, so shared hosts where
+  an unprivileged user or a container can open SCTP sockets are directly in
+  scope — even without a remote peer.
+- **No "too old to be affected":** the flaw dates to 2.6.25, so old LTS
+  kernels are *not* safe by age. The 6.1, 5.15, and 5.10 lines are
+  currently **unpatched** and vulnerable; check the *First fixed* column,
+  not the kernel's age.
+- **`sctp` often not loaded:** on hosts that never use SCTP the module is
+  absent, and blocking its autoload removes reachability entirely — the
+  cheapest durable mitigation short of the patch.
+
+## Verification log
+
+Every verdict in the table above is backed by a checkable source. This log
+records the provenance — the git reference, advisory, or repository index
+that established each fact — so any row can be audited or reproduced. Most
+readers never need it.
+
+{{< details summary="Full verification log" >}}
+#### Upstream
+
+- The fix is `9b2854f86f0b` (*sctp: don't free the ASCONF's own transport
+  in DEL-IP processing*), first released in **v7.2-rc5** (`git describe
+  --contains` → `v7.2-rc5~27^2~4`, tag date 2026-07-26, via
+  `~/src/linux/net` and `~/src/linux/stable`). It rejects a DEL-IP that
+  targets `asconf->transport`.
+- The bug was introduced by `42e30bf3463c` in **v2.6.25** (`describe
+  --contains` → `v2.6.25-rc1~1162^2~979`), the ASCONF DEL-IP support — so
+  every maintained line is in-window.
+- **CVE-2026-64564** assigned by the kernel CNA (confirmed via `vulns.git`
+  `origin/master`, `cve/published/2026/CVE-2026-64564.{json,dyad,cvss}`;
+  record keys on `9b2854f86f0b56e9027d68e7a3fc909d1a9b566f`). The `.dyad`'s
+  vulnerable:fixed pairs are `2.6.25 → 6.6.148 / 6.12.101 / 6.18.42 /
+  7.1.6 / 7.2-rc5`.
+- **Stable backports** (fix cherry-picks confirmed by subject grep against
+  `~/src/linux/stable`, each a new SHA): 6.6.148 (`fedeb4468987`), 6.12.101
+  (`74e8f3e7114f`), 6.18.42 (`85aca407c560`), 7.1.6 (`d136b29bf91d`) — all
+  tagged **2026-08-03** (commit dates 11:15–11:26 +0200). `finger_banner`
+  current point releases (7.1.8, 6.18.44, 6.12.103, 6.6.151) are at or
+  above them.
+- **Unpatched in-window lines** confirmed by the *absence* of the fixing
+  subject on `origin/linux-6.1.y`, `origin/linux-5.15.y`, and
+  `origin/linux-5.10.y` (current 6.1.182 / 5.15.215 / 5.10.264). No
+  not-affected lines exist — the intro predates every maintained branch.
+
+#### Scoring
+
+- **Kernel CNA** (`vulns.git` `.cvss`/`.json`, `origin/master`): CVSS 3.1
+  **9.8 CRITICAL** (`CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H`). The
+  CNA scenario scores `AV:N` because the ASCONF is processed from a
+  received packet on an established association, and `PR:N` because the
+  peer negotiates its own SCTP-AUTH keys (or the target runs
+  `addip_noauth`).
+- **Discoverers** ([write-up](https://matrix.tencent.com/en/2026/08/06/sctphantom-CVE-2026-64564)): CVSS 4.0 **8.5 HIGH**
+  (`CVSS:4.0/AV:L/AC:L/AT:N/PR:L/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N`),
+  scoring `AV:L` for the demonstrated local privilege-escalation /
+  container-escape primitive. The divergence is vantage point, not
+  disagreement on the flaw.
+- **NVD / EPSS / KEV**: NVD record not yet analysed at seed time; EPSS not
+  yet published; not in KEV.
+
+#### Distributions
+
+- **Debian** (Debian security tracker, CVE-2026-64564): trixie
+  `6.12.101-1` and sid `7.1.7-1` resolved *fixed*; bookworm `6.1.180-1`
+  and bullseye `5.10.262-1` *vulnerable* (their branches carry no
+  backport). Opt-in kernels from their source-package tracker pages, both
+  *vulnerable*: bookworm `linux-6.12` `6.12.100-1~deb12u1` (< 6.12.101
+  first fix), bullseye `linux-6.1` `6.1.180-1~deb11u1` (6.1 line unpatched).
+  *Fixed since* upload dates are pinned from snapshot.debian.org on the
+  first auto-update run.
+- **Proxmox VE** (`~/src/proxmox/pve-kernel`): patch
+  `…-sctp-don-t-free-the-ASCONF-s-own-transport-in-DEL-IP.patch` present as
+  `0059-…` in the `proxmox-kernel-7.0` tree (branch `master`) and `0034-…`
+  in `proxmox-kernel-6.8` (branch `bookworm-6.8`). Per `debian/changelog`,
+  the fix first ships in **`7.0.14-10`** (2026-08-06 20:53) for PVE 9 — its
+  `7.0.14-11` (2026-08-07) is the *next* release, fixing the unrelated
+  CVE-2026-68480 — and in **`6.8.12-41`** (2026-08-07 00:52) for PVE 8. The
+  CVE identifiers were tagged in `38fa3e0` / `6daa7f0` (2026-08-07). The
+  first `pve-no-subscription` build publishing each is confirmed from
+  `Packages.gz` on the first auto-update run.
+- **NixOS** (`~/src/nixos/nixpkgs`): `linux_default = packages.linux_6_18`;
+  every tracked ref resolves `6.18` at or above the `6.18.42` first-fixed
+  release, so all seven rows are fixed. *Current kernel* from each ref's
+  `kernels-org.json` — `master` / `release-26.05` at `6.18.44` (branch
+  tips), `nixos-unstable` / `-small` and `nixos-26.05` / `-small` at
+  `6.18.43`, `nixpkgs-unstable` at `6.18.42` (channel `git-revision` pins).
+  *Fixed since*: the branch rows use the commit date of the 6.18.42 bump
+  (`b658e06342e8` on master, `33565191d37a` on release-26.05, both
+  2026-08-03); the channel rows use `scripts/nixos-first-shipped`
+  (nixos-unstable 2026-08-04, nixos-unstable-small 2026-08-03,
+  nixpkgs-unstable 2026-08-08, nixos-26.05 2026-08-05, nixos-26.05-small
+  2026-08-03).
+- **Rocky / RHEL family**: `https://access.redhat.com/security/cve/CVE-2026-64564`
+  returns HTTP 404 (no CVE page / RHSA at seed time). EL8/EL9/EL10 all
+  carry SCTP and are in-window; verdicts flip when an RHSA lands. The
+  `sctp` module is on the RHEL-family default modprobe blacklist. Current
+  BaseOS kernels from Rocky repodata (`primary.xml.gz`, highest `rel`):
+  Rocky 10 `6.12.0-211.44.1.el10_2`, Rocky 9 `5.14.0-687.36.1.el9_8`,
+  Rocky 8 `4.18.0-553.153.1.el8_10`.
+- **Amazon Linux**: no ALAS for CVE-2026-64564 in the AL2023
+  `updateinfo.xml.gz` at seed time. Current per-stream kernels from
+  `primary.xml.gz`: default `kernel` `6.1.177-224.371`, `kernel6.12`
+  `6.12.95-124.187`, `kernel6.18` `6.18.39-79.141` — all in-window and
+  below their branches' first-fixed releases.
+{{< /details >}}
+
+## References
+
+| Source | URL |
+|---|---|
+| Researcher write-up (Tencent Matrix) | <https://matrix.tencent.com/en/2026/08/06/sctphantom-CVE-2026-64564> |
+| Kernel fix (v7.2-rc5) | <https://git.kernel.org/stable/c/9b2854f86f0b56e9027d68e7a3fc909d1a9b566f> |
+| Stable 6.6.148 | <https://git.kernel.org/stable/c/fedeb4468987bcaff85fe3061de5ae052d414740> |
+| Stable 6.12.101 | <https://git.kernel.org/stable/c/74e8f3e7114f0e26d1b2c4c048044db9fcc27603> |
+| Stable 6.18.42 | <https://git.kernel.org/stable/c/85aca407c560aba81b5ce9d3d6cf94c74077d19b> |
+| Stable 7.1.6 | <https://git.kernel.org/stable/c/d136b29bf91dd8e3161281b87de597b7311d9462> |
+| CVE-2026-64564 | <https://www.cve.org/CVERecord?id=CVE-2026-64564> |
+| Debian security tracker | <https://security-tracker.debian.org/tracker/CVE-2026-64564> |
+| Red Hat security data | <https://access.redhat.com/security/cve/CVE-2026-64564> |
+| Amazon Linux ALAS | <https://alas.aws.amazon.com/> |
+| stable point release banner | <https://www.kernel.org/finger_banner> |
+{.references}
+
+[writeup]: https://matrix.tencent.com/en/2026/08/06/sctphantom-CVE-2026-64564
+[fix]: https://git.kernel.org/stable/c/9b2854f86f0b56e9027d68e7a3fc909d1a9b566f
+[intro]: https://git.kernel.org/stable/c/42e30bf3463cd37d73839376662cb79b4d5c416c
