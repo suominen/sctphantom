@@ -26,7 +26,7 @@ cover:
 | Public disclosure | 2026-08-06 ([Tencent Matrix write-up][writeup]) |
 | Public PoC | None public. The researchers report internal PoCs demonstrating local privilege escalation and container-to-host escape |
 | KEV / EPSS / CVSS | Two scores exist. **Kernel CNA:** CVSS 3.1 **9.8 CRITICAL** (`AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H`), scoring the bug from a *remote SCTP peer*. **Discoverers:** CVSS 4.0 **8.5 HIGH** (`AV:L/AC:L/AT:N/PR:L/UI:N/VC:H/VI:H/VA:H/…`), scoring the *demonstrated local privilege-escalation* primitive. Not in KEV; EPSS not yet published. See *Scoring* below |
-| Reachability | An established SCTP association with the **ADD-IP / ASCONF** extension (`SCTP_ASCONF_SUPPORTED`) negotiated, and a valid AUTH chunk (SCTP-AUTH keys, or `net.sctp.addip_noauth_enable=1`). On most distributions the `sctp` module is **not loaded until an application uses SCTP** — see *Detection* and *Mitigation* |
+| Reachability | An established SCTP association with the **ADD-IP / ASCONF** extension negotiated and a valid AUTH chunk. Both can be enabled **per socket** (`SCTP_ASCONF_SUPPORTED` / `SCTP_AUTH_SUPPORTED`) with no privilege, so a local attacker turns them on and supplies the AUTH chunk itself — neither `net.sctp.addip_enable` nor `net.sctp.addip_noauth_enable` gates the local path (per the discoverers; confirmed in the kernel setsockopt handlers, which apply no capability check). The sysctls bound only the *remote* surface. On most distributions the `sctp` module is **not loaded until an application uses SCTP** — see *Detection* and *Mitigation* |
 {.summary}
 
 > :information_source: **Two vantage points, one bug.** The kernel CNA
@@ -290,9 +290,12 @@ stacks, `lksctp` test tools):
 ss -a --sctp 2>/dev/null || ss -a | grep -i sctp
 ```
 
-**Is ASCONF (ADD-IP) enabled?**  The chunk path is gated by the ADD-IP
-sysctls; `addip_noauth_enable=1` additionally drops the AUTH requirement,
-widening who can send the ASCONF:
+**Is ASCONF (ADD-IP) enabled?**  These sysctls set only the *system-wide
+default* — they decide whether a listening service that relies on that
+default will process ASCONF from remote peers. A local process enables
+ADD-IP and AUTH on its own socket (`SCTP_ASCONF_SUPPORTED` /
+`SCTP_AUTH_SUPPORTED`, no privilege) regardless of their value, so a `0`
+here does not measure local exposure:
 
 ```bash
 sysctl net.sctp.addip_enable net.sctp.addip_noauth_enable
@@ -336,21 +339,35 @@ Only do this where SCTP is genuinely unused — telephony/SIGTRAN gateways,
 some Diameter/RADIUS and SS7 stacks, and `lksctp`-based tooling need it and
 must fall back to the measures below.
 
-### Require AUTH for ASCONF (do not run `addip_noauth`)
+### Bound the remote surface with the ADD-IP sysctls
 
-If SCTP with ADD-IP is required, make sure `net.sctp.addip_noauth_enable`
-is **0** (the default) so an ASCONF must carry a valid AUTH chunk, forcing
-an attacker to complete SCTP-AUTH key negotiation before reaching the
-handler:
+These sysctls bound only the **remote** surface, and only for a service that
+relies on the system default. Keeping `net.sctp.addip_noauth_enable` at **0**
+(its default) makes a remote ASCONF carry a valid AUTH chunk, so a remote
+peer must complete SCTP-AUTH key negotiation first. Apply it for the current
+boot:
 
 ```bash
 sudo sysctl -w net.sctp.addip_noauth_enable=0
+```
+
+Persist it across reboots:
+
+```bash
 echo 'net.sctp.addip_noauth_enable = 0' | sudo tee /etc/sysctl.d/99-sctphantom.conf
 ```
 
-This does not close the bug for a peer that completes AUTH, and it does
-nothing where ADD-IP is not needed at all — there, disable ADD-IP entirely
-with `net.sctp.addip_enable=0`.
+Where ADD-IP is not needed at all, `net.sctp.addip_enable=0` additionally
+stops a default-configured listener from processing ASCONF from remote
+peers.
+
+**Neither sysctl touches the local vector.** The discoverers' demonstrated
+privilege escalation and container escape enable ADD-IP and AUTH per socket
+(`SCTP_ASCONF_SUPPORTED` / `SCTP_AUTH_SUPPORTED`, no `CAP_NET_ADMIN`, working
+under the default container seccomp profile) and send a legitimately
+authenticated ASCONF — so a `0` in either sysctl leaves that path fully
+open. On a multi-tenant or container host, only blocking the `sctp` module
+(above) or patching removes it.
 
 ### Restrict who can reach the SCTP listener
 
@@ -369,7 +386,10 @@ path open.
 - **Multi-tenant and container hosts:** the demonstrated impact is local
   privilege escalation and container-to-host escape, so shared hosts where
   an unprivileged user or a container can open SCTP sockets are directly in
-  scope — even without a remote peer.
+  scope — even without a remote peer. The ADD-IP sysctls give no protection
+  here: the demonstrated exploit enables ADD-IP and AUTH per socket without
+  `CAP_NET_ADMIN` and authenticates its own ASCONF, so only blocking the
+  `sctp` module or patching closes this path.
 - **No "too old to be affected":** the flaw dates to 2.6.25, so old LTS
   kernels are *not* safe by age. The 6.1, 5.15, and 5.10 lines are
   currently **unpatched** and vulnerable; check the *First fixed* column,

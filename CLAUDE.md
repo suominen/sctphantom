@@ -33,8 +33,12 @@ SCTP socket on most distros; on Rocky/RHEL 8/9/10 alike `sctp.ko` ships in
 `kernel-modules-extra`, which installs a `blacklist sctp` config, so it
 never autoloads there), an association with the **ADD-IP / ASCONF**
 extension negotiated, and a valid
-**AUTH** chunk (unless `net.sctp.addip_noauth_enable=1`).  These are
-reachability conditions, not verdict axes.
+**AUTH** chunk.  Both ADD-IP and AUTH can be enabled **per socket**
+(`SCTP_ASCONF_SUPPORTED` / `SCTP_AUTH_SUPPORTED`, no privilege, no
+`CAP_NET_ADMIN`), so a local attacker turns them on and authenticates its
+own ASCONF; the `net.sctp.addip_enable` / `addip_noauth_enable` sysctls
+bound only the **remote** surface, not the local privesc/container path.
+These are reachability conditions, not verdict axes.
 
 Two scores exist and both belong in the Summary: the **kernel CNA** scores
 it CVSS 3.1 **9.8 CRITICAL** (`AV:N`, remote SCTP peer); the
@@ -149,10 +153,15 @@ Summary, never as a column:
   with it the blacklist suppresses autoload.  An explicit `modprobe sctp`
   still loads it wherever the package is installed.
 - **ADD-IP / ASCONF + AUTH.**  The ASCONF path needs the ADD-IP extension
-  negotiated and a valid AUTH chunk; `net.sctp.addip_noauth_enable=1` drops
-  the AUTH requirement, widening reach.  Disabling ADD-IP
-  (`net.sctp.addip_enable=0`) or blocking the module removes reach — a
-  mitigation, not a fix.
+  negotiated and a valid AUTH chunk.  A socket enables both per-socket via
+  `SCTP_ASCONF_SUPPORTED` / `SCTP_AUTH_SUPPORTED` with no privilege
+  (confirmed in the kernel setsockopt handlers, which apply no capability
+  check), so the `net.sctp.addip_enable` / `addip_noauth_enable` sysctls set
+  only the system-wide default: they bound a remote peer's reach against a
+  default-configured listener but do **not** gate the local privesc/container
+  vector, where the attacker enables the features on its own socket and
+  authenticates its own ASCONF.  Blocking the module removes the local reach;
+  `net.sctp.addip_enable=0` is a remote-only mitigation, not a fix.
 
 The combined *Patch status* table is the **single source** for every
 row's kernel versions, dates, and status — upstream and distros alike.
@@ -604,11 +613,15 @@ turns on three host properties:
   (verified on live hosts and in BaseOS filelists).  A host with no SCTP
   traffic is not exposed regardless of kernel version.
 - **ADD-IP / ASCONF negotiated** — the DEL-IP path is only reached on an
-  association that negotiated the ADD-IP extension
-  (`net.sctp.addip_enable`).
-- **AUTH requirement** — an ASCONF needs a valid AUTH chunk unless
-  `net.sctp.addip_noauth_enable=1`, which drops the requirement and widens
-  who can send it.
+  association that negotiated the ADD-IP extension.  `net.sctp.addip_enable`
+  sets the system-wide default, but a socket can negotiate ADD-IP per-socket
+  via `SCTP_ASCONF_SUPPORTED` regardless of it (no privilege).
+- **AUTH requirement** — an ASCONF needs a valid AUTH chunk.
+  `net.sctp.addip_noauth_enable=1` drops that requirement system-wide, but a
+  local attacker does not need it: it enables AUTH per-socket
+  (`SCTP_AUTH_SUPPORTED`) and sends a legitimately authenticated ASCONF.  So
+  both sysctls bound only the remote surface against a default-configured
+  listener; neither gates the demonstrated local privesc/container path.
 
 These are per-host properties recorded in prose (Summary, the
 reachability blockquote, Detection, Mitigation) — re-derive them only when
@@ -954,7 +967,11 @@ several distro sites are JS-rendered SPAs that don't render via WebFetch.
   (≥ 6.18.42) is fixed.
 - **Mitigation vs fix:** blocking the `sctp` module or disabling ADD-IP
   (`net.sctp.addip_enable=0`) leaves the kernel hole, never
-  `:white_check_mark:`.  The EL-family autoload blacklist (8/9/10, via
+  `:white_check_mark:`.  The two are not equivalent, either:
+  `net.sctp.addip_enable=0` bounds only the **remote** surface (a local
+  attacker enables ADD-IP/AUTH per-socket and authenticates its own ASCONF),
+  whereas blocking the module removes the local vector too.  The EL-family
+  autoload blacklist (8/9/10, via
   `kernel-modules-extra`) is autoload-only (an explicit `modprobe sctp`
   defeats it), so it does not even earn `:warning:` — the EL rows stay
   `:x:` with a prose caveat.  A `:warning:`

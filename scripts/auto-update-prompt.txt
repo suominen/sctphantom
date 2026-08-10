@@ -29,10 +29,14 @@ other in-support kernel is Vulnerable. Do not mark any kernel row
 ":heavy_minus_sign: Not affected" on age grounds.
 
 Reachability (prose, NOT a verdict axis): the `sctp` module must be in use
-(on most distros it autoloads on first SCTP socket; Rocky/RHEL 10 ships a
-default `blacklist sctp` that suppresses autoload, but 8 and 9 do not), an
-association established with the ADD-IP/ASCONF extension, and a valid AUTH
-chunk (unless net.sctp.addip_noauth_enable=1).
+(on most distros it autoloads on first SCTP socket; Rocky/RHEL 8/9/10 alike
+ship sctp.ko in kernel-modules-extra with a default `blacklist sctp` that
+suppresses autoload), an association established with the ADD-IP/ASCONF
+extension, and a valid AUTH chunk. Both ADD-IP and AUTH can be enabled
+per-socket (SCTP_ASCONF_SUPPORTED / SCTP_AUTH_SUPPORTED, no privilege, no
+CAP_NET_ADMIN), so the addip_enable / addip_noauth_enable sysctls bound only
+the remote surface, not the local privesc/container path — a local attacker
+enables both on its own socket and authenticates its own ASCONF.
 
 References:
 - Write-up (Tencent Zhuque Lab): https://matrix.tencent.com/en/2026/08/06/sctphantom-CVE-2026-64564
