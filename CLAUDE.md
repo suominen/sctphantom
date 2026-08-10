@@ -29,8 +29,9 @@ a [write-up][writeup].  **No public PoC** — the researchers report internal
 PoCs for local privesc and container escape but released no code.
 
 Reaching the bug needs the **`sctp` module in use** (autoloaded on first
-SCTP socket on most distros; blacklisted by default on the RHEL family), an
-association with the **ADD-IP / ASCONF** extension negotiated, and a valid
+SCTP socket on most distros; autoload blacklisted by default on Rocky/RHEL
+**10** only — not 8 or 9), an association with the **ADD-IP / ASCONF**
+extension negotiated, and a valid
 **AUTH** chunk (unless `net.sctp.addip_noauth_enable=1`).  These are
 reachability conditions, not verdict axes.
 
@@ -139,8 +140,10 @@ Summary, never as a column:
 
 - **`sctp` module in use.**  The bug is unreachable unless SCTP is loaded
   and an association is established.  On most distros `sctp` autoloads on
-  first use of an SCTP socket; the RHEL family ships it on the modprobe
-  blacklist, so it does not autoload there.
+  first use of an SCTP socket; Rocky/RHEL **10** ships
+  `/etc/modprobe.d/sctp-blacklist.conf` (`blacklist sctp`) so it does not
+  autoload there — but Rocky/RHEL **8 and 9 do not** (verified on live
+  hosts), and even on 10 an explicit `modprobe sctp` still loads it.
 - **ADD-IP / ASCONF + AUTH.**  The ASCONF path needs the ADD-IP extension
   negotiated and a valid AUTH chunk; `net.sctp.addip_noauth_enable=1` drops
   the AUTH requirement, widening reach.  Disabling ADD-IP
@@ -307,9 +310,11 @@ yet`) — longer caveats go in the `###` prose:
 - `:warning: Staged` / `:warning: Mitigated` — not fully resolved: the
   fix is staged but not yet in the user-facing channel (merged /
   cherry-picked but not in a released package), **or** a distro default
-  materially reduces exposure (e.g. shipping `sctp` on the module
-  blacklist).  A mitigation is **not** a fix — it never earns
-  `:white_check_mark:`.
+  *materially* reduces exposure.  Note the Rocky/RHEL 10 `blacklist sctp`
+  default does **not** qualify: it only suppresses on-demand autoload, and
+  an explicit `modprobe sctp` (the local attacker's path) still loads it —
+  so EL10 stays `:x:`, with the blacklist a prose caveat.  A mitigation is
+  **not** a fix — it never earns `:white_check_mark:`.
 - `:grey_question: Unverified` — not yet verified (kernel pin or
   advisory not yet inspected).
 
@@ -580,9 +585,10 @@ For an unpatched kernel, whether the bug is reachable at all, and by whom,
 turns on three host properties:
 
 - **`sctp` module in use** — loaded and terminating associations.  On most
-  distros it autoloads on first use of an SCTP socket; the RHEL family
-  ships it on the modprobe blacklist, so it does not autoload there.  A
-  host with no SCTP traffic is not exposed regardless of kernel version.
+  distros it autoloads on first use of an SCTP socket; Rocky/RHEL **10**
+  ships `blacklist sctp` so it does not autoload there (8 and 9 do not —
+  verified on live hosts).  A host with no SCTP traffic is not exposed
+  regardless of kernel version.
 - **ADD-IP / ASCONF negotiated** — the DEL-IP path is only reached on an
   association that negotiated the ADD-IP extension
   (`net.sctp.addip_enable`).
@@ -805,10 +811,14 @@ before RHEL is.  Because the bug is ancient, all three EL lines (4.18 /
 5.14 / 6.12.0) carry SCTP and are in-window — do **not** rate any EL row
 "not affected".  At seed Red Hat has published **no** record for this CVE:
 `https://access.redhat.com/security/cve/CVE-2026-64564` returns HTTP 404,
-so every EL row is `:x:` Vulnerable, awaiting an RHSA.  One real mitigating
-factor worth a prose note: RHEL and its rebuilds ship `sctp` on the
-modprobe **blacklist** by default, so the datapath is not autoloaded unless
-enabled.  Read the CSAF/VEX record once it exists (the hydra securitydata
+so every EL row is `:x:` Vulnerable, awaiting an RHSA.  Module posture,
+worth a prose note but **not** a verdict change, differs by release
+(verified on live hosts): Rocky/RHEL **10** ships
+`/etc/modprobe.d/sctp-blacklist.conf` (`blacklist sctp`, plus `sctp_diag`)
+so `sctp` does not autoload; Rocky/RHEL **8 and 9 ship no such file** and
+autoload on demand.  Even on 10 the blacklist is autoload-only — `modprobe
+sctp` still loads it — so it does not close the local vector.  Read the
+CSAF/VEX record once it exists (the hydra securitydata
 API and the access.redhat.com CVE page are JS-rendered / 404 headlessly):
 
 ```
@@ -913,9 +923,9 @@ several distro sites are JS-rendered SPAs that don't render via WebFetch.
 - **EL family (Rocky/RHEL/Alma/Oracle/CloudLinux):** all of EL8 (4.18),
   EL9 (5.14), and EL10 (6.12.0) carry SCTP and are in-window; at seed Red
   Hat has published no record (404), so all are `:x:` awaiting an RHSA.
-  RHEL ships `sctp` on the modprobe blacklist by default (a mitigating
-  note).  AlmaLinux ships ahead of Rocky/RHEL and is the leading indicator
-  for the fix.
+  Only **EL10** ships a default `blacklist sctp` (autoload-only; 8 and 9
+  do not) — a prose note, not a verdict change.  AlmaLinux ships ahead of
+  Rocky/RHEL and is the leading indicator for the fix.
 - **Debian / Ubuntu / Proxmox VE:** every kernel here is in-window (the bug
   is ancient) — trixie/sid are fixed, bookworm/bullseye are not; PVE 9
   (7.0) and PVE 8 (6.8) both carry the 2026-08-07 cherry-pick.
@@ -925,9 +935,11 @@ several distro sites are JS-rendered SPAs that don't render via WebFetch.
   by whether that series carries the backport; the default `linux_6_18`
   (≥ 6.18.42) is fixed.
 - **Mitigation vs fix:** blocking the `sctp` module or disabling ADD-IP
-  (`net.sctp.addip_enable=0`) leaves the kernel hole — record as
-  `:warning:` only where a vendor ships such a default (the RHEL sctp
-  blacklist), never as `:white_check_mark:`.
+  (`net.sctp.addip_enable=0`) leaves the kernel hole, never
+  `:white_check_mark:`.  The EL10 autoload blacklist is autoload-only
+  (an explicit `modprobe sctp` defeats it), so it does not even earn
+  `:warning:` — EL10 stays `:x:` with a prose caveat.  A `:warning:`
+  needs a default that *materially* cuts exposure, not merely autoload.
 
 ## Known harmless warnings during build
 
