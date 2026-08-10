@@ -91,7 +91,7 @@ transport.
 > :warning: Because the introducing commit landed in **v2.6.25 (2008)**,
 > this is **not** a recent-regression bug: there is no "too old to be
 > affected" kernel. Any kernel with SCTP ADD-IP support, from 2.6.25 up to
-> the fixed point releases below, is in-window. A row is safe only by
+> the fixed point releases below, is in-window. A kernel is safe only by
 > carrying the [`9b2854f86f0b`][fix] fix — not by being old.
 
 ## Vulnerable commit range
@@ -114,15 +114,6 @@ backport; every SCTP-capable kernel without it is in-window and
 focused set of x86-64 distributions, with per-distribution detail in the
 sections that follow. *First fixed* and *Fixed since* stay `—` until a row
 is fixed.
-
-> :information_source: **Seed state (2026-08-10).** The **Linux kernel**,
-> **Debian**, **Proxmox VE**, and **NixOS** rows are verified against
-> upstream git, the Debian security tracker, the `pve-kernel` tree, and the
-> nixpkgs channel pins respectively. The **Rocky / RHEL** and **Amazon
-> Linux** rows carry each family's base kernel line and the
-> *no-advisory-yet* verdict true four days after disclosure — the
-> twice-daily auto-update pins their exact point releases and flips them
-> when an RHSA/ALAS lands.
 
 | Distribution | Release | Current kernel | First fixed | Fixed since | Status |
 |---|---|---|---|---|---|
@@ -170,8 +161,7 @@ The **6.1, 5.15, and 5.10** long-term lines are the exposure. The fix is
 **not** present on `linux-6.1.y`, `linux-5.15.y`, or `linux-5.10.y`, and
 because the bug dates to 2.6.25 all three are fully in-window: a host on
 6.1.182, 5.15.215, or 5.10.264 is vulnerable and stays so until its branch
-picks up the backport. These rows should flip in a later stable batch;
-until then, verify by subject before assuming a fix.
+picks up the backport, most likely in a later stable release batch.
 
 ### Debian
 
@@ -182,16 +172,14 @@ branch's first-fixed release, so it is **fixed**; **sid** at `7.1.7-1`
 (`6.1.180-1`) rides the 6.1 line and **bullseye** (`5.10.262-1`) the 5.10
 line — neither branch has the backport yet, so both are **vulnerable**, as
 the Debian security tracker records. When the 6.1.y and 5.10.y stable lines
-gain the fix (or Debian cherry-picks it), the bookworm and bullseye rows
-follow.
+gain the fix (or Debian cherry-picks it), bookworm and bullseye follow.
 
 Both older suites also offer an **opt-in newer kernel**, and both are
 **vulnerable** here too. bookworm's `linux-6.12` (bookworm-security,
 `6.12.100-1~deb12u1`) sits one point release *below* the 6.12 branch's
 `6.12.101` first fix — the same package cleared earlier 6.12 CVEs but not
 this one — and bullseye's `linux-6.1` (bullseye-security,
-`6.1.180-1~deb11u1`) rides the still-unpatched 6.1 line. Each opt-in row's
-verdict is independent of its suite's default row.
+`6.1.180-1~deb11u1`) rides the still-unpatched 6.1 line.
 
 SCTP itself is not built into Debian's kernel image but shipped as the
 `sctp` module, autoloaded on first use of an `AF_INET`/`IPPROTO_SCTP`
@@ -207,15 +195,12 @@ maintained series backport the SCTP fix (a
 **PVE 8's `proxmox-kernel-6.8`** in **`6.8.12-41`** (2026-08-07). The 6.8
 series is the familiar Proxmox pattern: although the upstream 6.8 base is
 old, the Ubuntu-derived kernel carries SCTP and receives the cherry-pick, so
-a pre-fix Proxmox series cannot be assumed safe by base version alone. The
-*Current kernel* cells read the git changelog head, which leads apt; the
-exact `pve-no-subscription` build that publishes each fix is confirmed at
-the first auto-update run.
+a pre-fix Proxmox series cannot be assumed safe by base version alone.
 
 ### NixOS
 
 Every tracked ref's default `linuxPackages` is `linux_6_18`, at or above
-the 6.18 branch's `6.18.42` first-fixed release, so all of these rows are
+the 6.18 branch's `6.18.42` first-fixed release, so every tracked ref is
 **fixed**; they differ only in which point release each has reached. Kernel
 updates land on nixpkgs `master` first, and each channel publishes them
 once its Hydra jobset passes. A channel can therefore sit a few days behind
@@ -253,10 +238,9 @@ differs by release, and only **EL10** helps: a stock Rocky 10 ships
 socket — though an explicit `modprobe sctp` still loads it, so this does
 not close the local vector. Stock **Rocky 8 and 9 carry no such file** and
 autoload `sctp` on demand like most distributions. Rocky rebuilds RHEL's
-kernels unchanged, so its
-verdicts track Red Hat's; AlmaLinux is typically the fastest rebuild and
-the leading indicator. Oracle Linux and CloudLinux track the RHEL
-determination.
+kernels unchanged, so its fixes track Red Hat's; AlmaLinux is typically
+the fastest rebuild and the leading indicator. Oracle Linux and
+CloudLinux track the RHEL determination.
 
 ### Amazon Linux
 
@@ -438,8 +422,8 @@ readers never need it.
   scoring `AV:L` for the demonstrated local privilege-escalation /
   container-escape primitive. The divergence is vantage point, not
   disagreement on the flaw.
-- **NVD / EPSS / KEV**: NVD record not yet analysed at seed time; EPSS not
-  yet published; not in KEV.
+- **NVD / EPSS / KEV**: NVD record not yet analysed; EPSS not yet
+  published; not in KEV.
 
 #### Distributions
 
@@ -449,8 +433,7 @@ readers never need it.
   backport). Opt-in kernels from their source-package tracker pages, both
   *vulnerable*: bookworm `linux-6.12` `6.12.100-1~deb12u1` (< 6.12.101
   first fix), bullseye `linux-6.1` `6.1.180-1~deb11u1` (6.1 line unpatched).
-  *Fixed since* upload dates are pinned from snapshot.debian.org on the
-  first auto-update run.
+  *Fixed since* upload dates not yet resolved from snapshot.debian.org.
 - **Proxmox VE** (`~/src/proxmox/pve-kernel`): patch
   `…-sctp-don-t-free-the-ASCONF-s-own-transport-in-DEL-IP.patch` present as
   `0059-…` in the `proxmox-kernel-7.0` tree (branch `master`) and `0034-…`
@@ -459,8 +442,8 @@ readers never need it.
   `7.0.14-11` (2026-08-07) is the *next* release, fixing the unrelated
   CVE-2026-68480 — and in **`6.8.12-41`** (2026-08-07 00:52) for PVE 8. The
   CVE identifiers were tagged in `38fa3e0` / `6daa7f0` (2026-08-07). The
-  first `pve-no-subscription` build publishing each is confirmed from
-  `Packages.gz` on the first auto-update run.
+  first `pve-no-subscription` build publishing each is not yet confirmed
+  from `Packages.gz`.
 - **NixOS** (`~/src/nixos/nixpkgs`): `linux_default = packages.linux_6_18`;
   every tracked ref resolves `6.18` at or above the `6.18.42` first-fixed
   release, so all seven rows are fixed. *Current kernel* from each ref's
@@ -474,16 +457,16 @@ readers never need it.
   nixpkgs-unstable 2026-08-08, nixos-26.05 2026-08-05, nixos-26.05-small
   2026-08-03).
 - **Rocky / RHEL family**: `https://access.redhat.com/security/cve/CVE-2026-64564`
-  returns HTTP 404 (no CVE page / RHSA at seed time). EL8/EL9/EL10 all
-  carry SCTP and are in-window; verdicts flip when an RHSA lands. Default
-  module posture (verified on live hosts): Rocky 10 ships
+  returns HTTP 404 (no CVE page or RHSA yet). EL8/EL9/EL10 all carry
+  SCTP and are in-window. Default module posture (verified on live
+  hosts): Rocky 10 ships
   `/etc/modprobe.d/sctp-blacklist.conf` (`blacklist sctp`), suppressing
   autoload; Rocky 8 and 9 ship no such file. Current
   BaseOS kernels from Rocky repodata (`primary.xml.gz`, highest `rel`):
   Rocky 10 `6.12.0-211.44.1.el10_2`, Rocky 9 `5.14.0-687.36.1.el9_8`,
   Rocky 8 `4.18.0-553.153.1.el8_10`.
 - **Amazon Linux**: no ALAS for CVE-2026-64564 in the AL2023
-  `updateinfo.xml.gz` at seed time. Current per-stream kernels from
+  `updateinfo.xml.gz`. Current per-stream kernels from
   `primary.xml.gz`: default `kernel` `6.1.177-224.371`, `kernel6.12`
   `6.12.95-124.187`, `kernel6.18` `6.18.39-79.141` — all in-window and
   below their branches' first-fixed releases.
