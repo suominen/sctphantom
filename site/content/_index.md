@@ -3,7 +3,7 @@ title: "SCTPhantom — SCTP ASCONF transport use-after-free"
 description: "Linux kernel SCTP ASCONF DEL-IP use-after-free (CVE-2026-64564, SCTPhantom) — remote-triggerable transport UAF, local privilege escalation and container-to-host escape — distro patch status tracker"
 layout: "single"
 date: 2026-08-10
-lastmod: 2026-08-10
+lastmod: 2026-08-11
 cover:
   image: "sctphantom-tracker.png"
   alt: "SCTPhantom — Linux kernel SCTP ASCONF transport use-after-free tracker"
@@ -196,6 +196,13 @@ maintained series backport the SCTP fix (a
 series is the familiar Proxmox pattern: although the upstream 6.8 base is
 old, the Ubuntu-derived kernel carries SCTP and receives the cherry-pick, so
 a pre-fix Proxmox series cannot be assumed safe by base version alone.
+
+Both releases also still publish pre-GA preview kernel series that Proxmox
+abandoned before this disclosure and that never received the fix — PVE 9's
+`proxmox-kernel-6.14` and `proxmox-kernel-6.17`, and PVE 8's
+`proxmox-kernel-6.2` and `proxmox-kernel-6.5` — the packages that preceded
+each release settling on its current default. None is installed by a
+current default configuration, so none gets a row here.
 
 ### NixOS
 
@@ -474,6 +481,16 @@ readers never need it.
   `proxmox-kernel-6.8.12-41-pve` in bookworm); the current
   `proxmox-kernel-7.0` / `-6.8` meta versions there are `7.0.14-11` and
   `6.8.12-41`.
+  - `proxmox-default-kernel`'s `Depends` confirms the live defaults:
+    `7.0` on trixie (PVE 9), `6.8` on bookworm (PVE 8) — both unchanged.
+  - Pre-GA preview series still published but no longer updated, none
+    carrying the fix: PVE 9's `proxmox-kernel-6.14` (branch
+    `trixie-6.14`, last build `6.14.11-9`, 2026-05-15) and
+    `proxmox-kernel-6.17` (branch `trixie-6.17`, last build `6.17.13-21`,
+    2026-07-28 — no commits since); PVE 8's `proxmox-kernel-6.2` (branch
+    `bookworm-6.2`, last build `6.2.16-20`) and `proxmox-kernel-6.5`
+    (branch `bookworm-6.5`, last build `6.5.13-6`). All four predate this
+    disclosure and are excluded from the table.
 - **NixOS** (`~/src/nixos/nixpkgs`): `linux_default = packages.linux_6_18`;
   every tracked ref resolves `6.18` at or above the `6.18.42` first-fixed
   release, so all seven rows are fixed. *Current kernel* from each ref's
