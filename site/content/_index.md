@@ -25,7 +25,7 @@ cover:
 | Discoverer | Corvus AI (Tencent Zhuque Lab / TencentOS Security Team) |
 | Public disclosure | 2026-08-06 ([Tencent Matrix write-up][writeup]) |
 | Public PoC | None public. The researchers report internal PoCs demonstrating local privilege escalation and container-to-host escape |
-| KEV / EPSS / CVSS | Two scores exist. **Kernel CNA:** CVSS 3.1 **9.8 CRITICAL** (`AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H`), scoring the bug from a *remote SCTP peer*. **Discoverers:** CVSS 4.0 **8.5 HIGH** (`AV:L/AC:L/AT:N/PR:L/UI:N/VC:H/VI:H/VA:H/…`), scoring the *demonstrated local privilege-escalation* primitive. Not in KEV; EPSS not yet published. See *Scoring* below |
+| KEV / EPSS / CVSS | Two scores exist. **Kernel CNA:** CVSS 3.1 **9.8 CRITICAL** (`AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H`), scoring the bug from a *remote SCTP peer*. **Discoverers:** CVSS 4.0 **8.5 HIGH** (`AV:L/AC:L/AT:N/PR:L/UI:N/VC:H/VI:H/VA:H/…`), scoring the *demonstrated local privilege-escalation* primitive. Not in KEV; EPSS **0.48%** (39th percentile). See *Scoring* below |
 | Reachability | An established SCTP association with the **ADD-IP / ASCONF** extension negotiated and a valid AUTH chunk. Both can be enabled **per socket** (`SCTP_ASCONF_SUPPORTED` / `SCTP_AUTH_SUPPORTED`) with no privilege, so a local attacker turns them on and supplies the AUTH chunk itself — neither `net.sctp.addip_enable` nor `net.sctp.addip_noauth_enable` gates the local path (per the discoverers; confirmed in the kernel setsockopt handlers, which apply no capability check). The sysctls bound only the *remote* surface. On most distributions the `sctp` module is **not loaded until an application uses SCTP** — see *Detection* and *Mitigation* |
 {.summary}
 
@@ -137,12 +137,12 @@ is fixed.
 | NixOS | release-26.05 | 6.18.44 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
 | NixOS | Unstable | 6.18.43 | 6.18.42 | 2026-08-04 | :white_check_mark: Fixed |
 | NixOS | Unstable (small) | 6.18.44 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
-| NixOS | Unstable (nixpkgs) | 6.18.43 | 6.18.42 | 2026-08-08 | :white_check_mark: Fixed |
+| NixOS | Unstable (nixpkgs) | 6.18.44 | 6.18.42 | 2026-08-08 | :white_check_mark: Fixed |
 | NixOS | 26.05 | 6.18.43 | 6.18.42 | 2026-08-05 | :white_check_mark: Fixed |
 | NixOS | 26.05 (small) | 6.18.44 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
 | Rocky Linux / RHEL | 10 | 6.12.0-211.44.1.el10_2 | — | — | :x: Vulnerable — no RHSA yet |
 | Rocky Linux / RHEL | 9 | 5.14.0-687.36.1.el9_8 | — | — | :x: Vulnerable — no RHSA yet |
-| Rocky Linux / RHEL | 8 | 4.18.0-553.153.1.el8_10 | — | — | :x: Vulnerable — no RHSA yet |
+| Rocky Linux / RHEL | 8 | 4.18.0-553.154.1.el8_10 | — | — | :x: Vulnerable — no RHSA yet |
 | Amazon Linux | 2023 (default) | 6.1.177-224.371 | — | — | :x: Vulnerable — no ALAS yet |
 | Amazon Linux | 2023 (6.12 opt-in) | 6.12.95-124.187 | — | — | :x: Vulnerable — no ALAS yet |
 | Amazon Linux | 2023 (6.18 opt-in) | 6.18.39-79.141 | — | — | :x: Vulnerable — no ALAS yet |
@@ -455,8 +455,10 @@ readers never need it.
   scoring `AV:L` for the demonstrated local privilege-escalation /
   container-escape primitive. The divergence is vantage point, not
   disagreement on the flaw.
-- **NVD / EPSS / KEV**: NVD record not yet analysed; EPSS not yet
-  published; not in KEV.
+- **NVD / EPSS / KEV**: NVD record not yet analysed (`vulnStatus`
+  `Received`, its listed CVSS 3.1 mirrors the CNA score rather than an
+  independent NVD assessment); EPSS **0.48%** (39th percentile, via
+  api.first.org); not in KEV.
 
 #### Distributions
 
@@ -495,10 +497,11 @@ readers never need it.
 - **NixOS** (`~/src/nixos/nixpkgs`): `linux_default = packages.linux_6_18`;
   every tracked ref resolves `6.18` at or above the `6.18.42` first-fixed
   release, so all seven rows are fixed. *Current kernel* from each ref's
-  `kernels-org.json` — `master` / `release-26.05` and `nixos-unstable-small`
-  / `nixos-26.05-small` at `6.18.44` (branch tips), `nixos-unstable` /
-  `nixos-26.05` at `6.18.43`, `nixpkgs-unstable` at `6.18.43` (channel
-  `git-revision` pins).
+  `kernels-org.json` — `master` / `release-26.05`, `nixos-unstable-small`
+  / `nixos-26.05-small`, and `nixpkgs-unstable` at `6.18.44` (branch tips
+  for the first two; channel `git-revision` pin for `nixpkgs-unstable`),
+  `nixos-unstable` / `nixos-26.05` at `6.18.43` (channel `git-revision`
+  pins).
   *Fixed since*: the branch rows use the commit date of the 6.18.42 bump
   (`b658e06342e8` on master, `33565191d37a` on release-26.05, both
   2026-08-03); the channel rows use `scripts/nixos-first-shipped`
@@ -518,7 +521,7 @@ readers never need it.
   autoload — earlier entries here misread this as EL10-only. Current
   BaseOS kernels from Rocky repodata (`primary.xml.gz`, highest `rel`):
   Rocky 10 `6.12.0-211.44.1.el10_2`, Rocky 9 `5.14.0-687.36.1.el9_8`,
-  Rocky 8 `4.18.0-553.153.1.el8_10`.
+  Rocky 8 `4.18.0-553.154.1.el8_10`.
 - **Amazon Linux**: no ALAS for CVE-2026-64564 in the AL2023
   `updateinfo.xml.gz`. Current per-stream kernels from
   `primary.xml.gz`: default `kernel` `6.1.177-224.371`, `kernel6.12`
