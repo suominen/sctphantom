@@ -108,7 +108,11 @@ that's likely why — re-read before assuming stale state.
   methodology.  Those live here in `CLAUDE.md`; stating them in the
   tracker too duplicates them and drifts.  State the reader-relevant
   *fact* ("7.0.y is EOL and unpatched — permanently vulnerable"), never
-  the policy behind it.
+  the policy behind it.  In particular, when prose covers a row-less
+  item (a dead series, an untracked release), end with the consequence
+  and the way out for a host still on it ("no fix is coming — switch to
+  the current default kernel"), never with the row decision ("so it
+  gets no row here") — the reader can see the table for themselves.
 - **One command per fenced code block, no inline comments.**  Each `bash`
   code fence holds a single command with nothing after it on the line, so
   the rendered copy button yields a clean, runnable command.  Put any
