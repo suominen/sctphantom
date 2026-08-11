@@ -200,9 +200,10 @@ a pre-fix Proxmox series cannot be assumed safe by base version alone.
 Both releases also still publish pre-GA preview kernel series that Proxmox
 abandoned before this disclosure and that never received the fix — PVE 9's
 `proxmox-kernel-6.14` and `proxmox-kernel-6.17`, and PVE 8's
-`proxmox-kernel-6.2` and `proxmox-kernel-6.5` — the packages that preceded
-each release settling on its current default. None is installed by a
-current default configuration, so none gets a row here.
+`proxmox-kernel-6.2` and `proxmox-kernel-6.5`. No fix is coming for any of
+them: a host still booting one of these preview kernels stays vulnerable
+until it switches to its release's current default kernel, which carries
+the fix.
 
 ### NixOS
 
@@ -490,7 +491,7 @@ readers never need it.
     2026-07-28 — no commits since); PVE 8's `proxmox-kernel-6.2` (branch
     `bookworm-6.2`, last build `6.2.16-20`) and `proxmox-kernel-6.5`
     (branch `bookworm-6.5`, last build `6.5.13-6`). All four predate this
-    disclosure and are excluded from the table.
+    disclosure.
 - **NixOS** (`~/src/nixos/nixpkgs`): `linux_default = packages.linux_6_18`;
   every tracked ref resolves `6.18` at or above the `6.18.42` first-fixed
   release, so all seven rows are fixed. *Current kernel* from each ref's
