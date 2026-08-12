@@ -3,7 +3,7 @@ title: "SCTPhantom — SCTP ASCONF transport use-after-free"
 description: "Linux kernel SCTP ASCONF DEL-IP use-after-free (CVE-2026-64564, SCTPhantom) — remote-triggerable transport UAF, local privilege escalation and container-to-host escape — distro patch status tracker"
 layout: "single"
 date: 2026-08-10
-lastmod: 2026-08-11
+lastmod: 2026-08-12
 cover:
   image: "sctphantom-tracker.png"
   alt: "SCTPhantom — Linux kernel SCTP ASCONF transport use-after-free tracker"
@@ -125,7 +125,7 @@ is fixed.
 | Linux kernel | 6.1.x | 6.1.182 | — | — | :x: Vulnerable |
 | Linux kernel | 5.15.x | 5.15.215 | — | — | :x: Vulnerable |
 | Linux kernel | 5.10.x | 5.10.264 | — | — | :x: Vulnerable |
-| Debian | sid (unstable) | 7.1.7-1 | 7.1.7-1 | 2026-08-07 | :white_check_mark: Fixed |
+| Debian | sid (unstable) | 7.1.8-1 | 7.1.7-1 | 2026-08-07 | :white_check_mark: Fixed |
 | Debian | 13 (trixie) | 6.12.101-1 | 6.12.101-1 | 2026-08-06 | :white_check_mark: Fixed — trixie-security |
 | Debian | 12 (bookworm) | 6.1.180-1 | — | — | :x: Vulnerable |
 | Debian | 12 (6.12 opt-in) | 6.12.100-1~deb12u1 | — | — | :x: Vulnerable — 6.12.100 below the 6.12.101 first fix |
@@ -135,7 +135,7 @@ is fixed.
 | Proxmox VE | 8 (default) | 6.8.12-41-pve | 6.8.12-41 | 2026-08-07 | :white_check_mark: Fixed — cherry-pick |
 | NixOS | master | 6.18.44 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
 | NixOS | release-26.05 | 6.18.44 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
-| NixOS | Unstable | 6.18.43 | 6.18.42 | 2026-08-04 | :white_check_mark: Fixed |
+| NixOS | Unstable | 6.18.44 | 6.18.42 | 2026-08-04 | :white_check_mark: Fixed |
 | NixOS | Unstable (small) | 6.18.44 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
 | NixOS | Unstable (nixpkgs) | 6.18.44 | 6.18.42 | 2026-08-08 | :white_check_mark: Fixed |
 | NixOS | 26.05 | 6.18.43 | 6.18.42 | 2026-08-05 | :white_check_mark: Fixed |
@@ -463,7 +463,7 @@ readers never need it.
 #### Distributions
 
 - **Debian** (Debian security tracker, CVE-2026-64564): trixie
-  `6.12.101-1` and sid `7.1.7-1` resolved *fixed*; bookworm `6.1.180-1`
+  `6.12.101-1` and sid `7.1.8-1` resolved *fixed*; bookworm `6.1.180-1`
   and bullseye `5.10.262-1` *vulnerable* (their branches carry no
   backport). Opt-in kernels from their source-package tracker pages, both
   *vulnerable*: bookworm `linux-6.12` `6.12.100-1~deb12u1` (< 6.12.101
@@ -498,10 +498,10 @@ readers never need it.
   every tracked ref resolves `6.18` at or above the `6.18.42` first-fixed
   release, so all seven rows are fixed. *Current kernel* from each ref's
   `kernels-org.json` — `master` / `release-26.05`, `nixos-unstable-small`
-  / `nixos-26.05-small`, and `nixpkgs-unstable` at `6.18.44` (branch tips
-  for the first two; channel `git-revision` pin for `nixpkgs-unstable`),
-  `nixos-unstable` / `nixos-26.05` at `6.18.43` (channel `git-revision`
-  pins).
+  / `nixos-26.05-small`, `nixpkgs-unstable`, and `nixos-unstable` at
+  `6.18.44` (branch tips for the first two; channel `git-revision` pins
+  for the rest), `nixos-26.05` at `6.18.43` (channel `git-revision`
+  pin).
   *Fixed since*: the branch rows use the commit date of the 6.18.42 bump
   (`b658e06342e8` on master, `33565191d37a` on release-26.05, both
   2026-08-03); the channel rows use `scripts/nixos-first-shipped`
