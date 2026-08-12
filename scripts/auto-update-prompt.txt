@@ -209,9 +209,27 @@ run, but the only thing you should leave behind is the edited tracker
 
 5. If you made changes, commit them on the current branch (which is
    `auto-update` — the wrapper has already switched to it and merged
-   origin/main forward). Do NOT create a new branch, do NOT switch
-   branches, do NOT push, and do NOT open a PR. The user merges auto-update
-   into main manually. If nothing changed, exit without committing.
+   origin/main forward). The permission allowlist matches command
+   prefixes, so phrase the git calls exactly as plain `git add <file>`
+   and `git commit -F -` with the message in a quoted heredoc:
+
+     git commit -a -F - <<'EOF'
+     Subject line
+
+     Body.
+     EOF
+
+   Run them from the worktree (your cwd, where the wrapper started
+   you). These forms are NOT allowlisted and will be denied: `git -C
+   <path> …` (prefix is `git -C`, not `git commit`), compound commands
+   (`cd … && git commit`), and writing the message to a temp file
+   first (`mktemp` and `cat` are not allowlisted). If a git call comes
+   back "requires approval", re-phrase it into the plain-prefix form
+   above — nothing can approve a prompt in a headless run, so a denied
+   commit otherwise strands the run's work uncommitted. Do NOT create
+   a new branch, do NOT switch branches, do NOT push, and do NOT open
+   a PR. The user merges auto-update into main manually. If nothing
+   changed, exit without committing.
 
 If you hit unexpected errors or substantive changes you can't confidently
 encode, commit your best attempt and note open questions in the commit
