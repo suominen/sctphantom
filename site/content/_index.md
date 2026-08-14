@@ -3,7 +3,7 @@ title: "SCTPhantom — SCTP ASCONF transport use-after-free"
 description: "Linux kernel SCTP ASCONF DEL-IP use-after-free (CVE-2026-64564, SCTPhantom) — remote-triggerable transport UAF, local privilege escalation and container-to-host escape — distro patch status tracker"
 layout: "single"
 date: 2026-08-10
-lastmod: 2026-08-13
+lastmod: 2026-08-14
 cover:
   image: "sctphantom-tracker.png"
   alt: "SCTPhantom — Linux kernel SCTP ASCONF transport use-after-free tracker"
@@ -126,13 +126,13 @@ is fixed.
 | Linux kernel | 5.15.x | 5.15.215 | — | — | :x: Vulnerable |
 | Linux kernel | 5.10.x | 5.10.264 | — | — | :x: Vulnerable |
 | Debian | sid (unstable) | 7.1.8-1 | 7.1.7-1 | 2026-08-07 | :white_check_mark: Fixed |
-| Debian | 13 (trixie) | 6.12.101-1 | 6.12.101-1 | 2026-08-06 | :white_check_mark: Fixed — trixie-security |
+| Debian | 13 (trixie) | 6.12.101-1 | 6.12.101-1 | 2026-08-06 | :white_check_mark: Fixed — DSA-6415-1 |
 | Debian | 12 (bookworm) | 6.1.180-1 | — | — | :x: Vulnerable |
 | Debian | 12 (6.12 opt-in) | 6.12.100-1~deb12u1 | — | — | :x: Vulnerable — 6.12.100 below the 6.12.101 first fix |
 | Debian | 11 (bullseye, LTS) | 5.10.262-1 | — | — | :x: Vulnerable |
 | Debian | 11 (6.1 opt-in) | 6.1.180-1~deb11u1 | — | — | :x: Vulnerable |
-| Proxmox VE | 9 (default) | 7.0.14-11-pve | 7.0.14-10 | 2026-08-06 | :white_check_mark: Fixed — cherry-pick |
-| Proxmox VE | 8 (default) | 6.8.12-41-pve | 6.8.12-41 | 2026-08-07 | :white_check_mark: Fixed — cherry-pick |
+| Proxmox VE | 9 (default) | 7.0.14-12-pve | 7.0.14-10 | 2026-08-06 | :white_check_mark: Fixed — cherry-pick |
+| Proxmox VE | 8 (default) | 6.8.12-42-pve | 6.8.12-41 | 2026-08-07 | :white_check_mark: Fixed — cherry-pick |
 | NixOS | master | 6.18.44 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
 | NixOS | release-26.05 | 6.18.44 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
 | NixOS | Unstable | 6.18.44 | 6.18.42 | 2026-08-04 | :white_check_mark: Fixed |
@@ -470,7 +470,7 @@ readers never need it.
   first fix), bullseye `linux-6.1` `6.1.180-1~deb11u1` (6.1 line unpatched).
   *Fixed since* from snapshot.debian.org `first_seen`: sid `7.1.7-1`
   2026-08-07, trixie `6.12.101-1` 2026-08-06 (shipped via
-  trixie-security).
+  **DSA-6415-1**).
 - **Proxmox VE** (`~/src/proxmox/pve-kernel`): patch
   `…-sctp-don-t-free-the-ASCONF-s-own-transport-in-DEL-IP.patch` present as
   `0059-…` in the `proxmox-kernel-7.0` tree (branch `master`) and `0034-…`
@@ -482,8 +482,8 @@ readers never need it.
   `pve-no-subscription` `Packages.gz` indexes publish both first-fixed
   builds (`proxmox-kernel-7.0.14-10-pve` in trixie,
   `proxmox-kernel-6.8.12-41-pve` in bookworm); the current
-  `proxmox-kernel-7.0` / `-6.8` meta versions there are `7.0.14-11` and
-  `6.8.12-41`.
+  `proxmox-kernel-7.0` / `-6.8` meta versions there are `7.0.14-12` and
+  `6.8.12-42`.
   - `proxmox-default-kernel`'s `Depends` confirms the live defaults:
     `7.0` on trixie (PVE 9), `6.8` on bookworm (PVE 8) — both unchanged.
   - Pre-GA preview series still published but no longer updated, none
