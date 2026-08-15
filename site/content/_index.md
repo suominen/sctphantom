@@ -128,7 +128,7 @@ is fixed.
 | Debian | sid (unstable) | 7.1.8-1 | 7.1.7-1 | 2026-08-07 | :white_check_mark: Fixed |
 | Debian | 13 (trixie) | 6.12.101-1 | 6.12.101-1 | 2026-08-06 | :white_check_mark: Fixed — DSA-6415-1 |
 | Debian | 12 (bookworm) | 6.1.180-1 | — | — | :x: Vulnerable |
-| Debian | 12 (6.12 opt-in) | 6.12.100-1~deb12u1 | — | — | :x: Vulnerable — 6.12.100 below the 6.12.101 first fix |
+| Debian | 12 (6.12 opt-in) | 6.12.101-1~deb12u1 | 6.12.101-1~deb12u1 | 2026-08-15 | :white_check_mark: Fixed |
 | Debian | 11 (bullseye, LTS) | 5.10.262-1 | — | — | :x: Vulnerable |
 | Debian | 11 (6.1 opt-in) | 6.1.180-1~deb11u1 | — | — | :x: Vulnerable |
 | Proxmox VE | 9 (default) | 7.0.14-12-pve | 7.0.14-10 | 2026-08-06 | :white_check_mark: Fixed — cherry-pick |
@@ -174,12 +174,12 @@ line — neither branch has the backport yet, so both are **vulnerable**, as
 the Debian security tracker records. When the 6.1.y and 5.10.y stable lines
 gain the fix (or Debian cherry-picks it), bookworm and bullseye follow.
 
-Both older suites also offer an **opt-in newer kernel**, and both are
-**vulnerable** here too. bookworm's `linux-6.12` (bookworm-security,
-`6.12.100-1~deb12u1`) sits one point release *below* the 6.12 branch's
-`6.12.101` first fix — the same package cleared earlier 6.12 CVEs but not
-this one — and bullseye's `linux-6.1` (bullseye-security,
-`6.1.180-1~deb11u1`) rides the still-unpatched 6.1 line.
+Both older suites also offer an **opt-in newer kernel**. bookworm's
+`linux-6.12` (bookworm-security) reached `6.12.101-1~deb12u1` on
+2026-08-15 — exactly the 6.12 branch's first-fixed release — so it is
+**fixed**, independently of the still-vulnerable bookworm default.
+bullseye's `linux-6.1` (bullseye-security, `6.1.180-1~deb11u1`) rides the
+still-unpatched 6.1 line and stays **vulnerable**.
 
 SCTP itself is not built into Debian's kernel image but shipped as the
 `sctp` module, autoloaded on first use of an `AF_INET`/`IPPROTO_SCTP`
@@ -465,12 +465,17 @@ readers never need it.
 - **Debian** (Debian security tracker, CVE-2026-64564): trixie
   `6.12.101-1` and sid `7.1.8-1` resolved *fixed*; bookworm `6.1.180-1`
   and bullseye `5.10.262-1` *vulnerable* (their branches carry no
-  backport). Opt-in kernels from their source-package tracker pages, both
-  *vulnerable*: bookworm `linux-6.12` `6.12.100-1~deb12u1` (< 6.12.101
-  first fix), bullseye `linux-6.1` `6.1.180-1~deb11u1` (6.1 line unpatched).
+  backport). Opt-in kernels from their source-package tracker pages
+  (security-tracker does not assess `CVE-2026-64564` against either
+  opt-in source package by name, so status is derived from a version
+  compare against the branch's first-fixed release): bookworm
+  `linux-6.12` reached `6.12.101-1~deb12u1` — the 6.12 branch's
+  first-fixed release — so it is *fixed*; bullseye `linux-6.1` stays at
+  `6.1.180-1~deb11u1` (6.1 line unpatched), so it is *vulnerable*.
   *Fixed since* from snapshot.debian.org `first_seen`: sid `7.1.7-1`
   2026-08-07, trixie `6.12.101-1` 2026-08-06 (shipped via
-  **DSA-6415-1**).
+  **DSA-6415-1**), bookworm `linux-6.12` `6.12.101-1~deb12u1`
+  2026-08-15.
 - **Proxmox VE** (`~/src/proxmox/pve-kernel`): patch
   `…-sctp-don-t-free-the-ASCONF-s-own-transport-in-DEL-IP.patch` present as
   `0059-…` in the `proxmox-kernel-7.0` tree (branch `master`) and `0034-…`
