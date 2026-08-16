@@ -3,7 +3,7 @@ title: "SCTPhantom — SCTP ASCONF transport use-after-free"
 description: "Linux kernel SCTP ASCONF DEL-IP use-after-free (CVE-2026-64564, SCTPhantom) — remote-triggerable transport UAF, local privilege escalation and container-to-host escape — distro patch status tracker"
 layout: "single"
 date: 2026-08-10
-lastmod: 2026-08-15
+lastmod: 2026-08-16
 cover:
   image: "sctphantom-tracker.png"
   alt: "SCTPhantom — Linux kernel SCTP ASCONF transport use-after-free tracker"
@@ -125,7 +125,7 @@ is fixed.
 | Linux kernel | 6.1.x | 6.1.182 | — | — | :x: Vulnerable |
 | Linux kernel | 5.15.x | 5.15.215 | — | — | :x: Vulnerable |
 | Linux kernel | 5.10.x | 5.10.264 | — | — | :x: Vulnerable |
-| Debian | sid (unstable) | 7.1.8-1 | 7.1.7-1 | 2026-08-07 | :white_check_mark: Fixed |
+| Debian | sid (unstable) | 7.1.8-2 | 7.1.7-1 | 2026-08-07 | :white_check_mark: Fixed |
 | Debian | 13 (trixie) | 6.12.101-1 | 6.12.101-1 | 2026-08-06 | :white_check_mark: Fixed — DSA-6415-1 |
 | Debian | 12 (bookworm) | 6.1.180-1 | — | — | :x: Vulnerable |
 | Debian | 12 (6.12 opt-in) | 6.12.101-1~deb12u1 | 6.12.101-1~deb12u1 | 2026-08-15 | :white_check_mark: Fixed |
@@ -463,7 +463,7 @@ readers never need it.
 #### Distributions
 
 - **Debian** (Debian security tracker, CVE-2026-64564): trixie
-  `6.12.101-1` and sid `7.1.8-1` resolved *fixed*; bookworm `6.1.180-1`
+  `6.12.101-1` and sid `7.1.8-2` resolved *fixed*; bookworm `6.1.180-1`
   and bullseye `5.10.262-1` *vulnerable* (their branches carry no
   backport). Opt-in kernels from their source-package tracker pages
   (security-tracker does not assess `CVE-2026-64564` against either
