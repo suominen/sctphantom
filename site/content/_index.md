@@ -3,7 +3,7 @@ title: "SCTPhantom — SCTP ASCONF transport use-after-free"
 description: "Linux kernel SCTP ASCONF DEL-IP use-after-free (CVE-2026-64564, SCTPhantom) — remote-triggerable transport UAF, local privilege escalation and container-to-host escape — distro patch status tracker"
 layout: "single"
 date: 2026-08-10
-lastmod: 2026-08-16
+lastmod: 2026-08-17
 cover:
   image: "sctphantom-tracker.png"
   alt: "SCTPhantom — Linux kernel SCTP ASCONF transport use-after-free tracker"
@@ -125,7 +125,8 @@ is fixed.
 | Linux kernel | 6.1.x | 6.1.182 | — | — | :x: Vulnerable |
 | Linux kernel | 5.15.x | 5.15.215 | — | — | :x: Vulnerable |
 | Linux kernel | 5.10.x | 5.10.264 | — | — | :x: Vulnerable |
-| Debian | sid (unstable) | 7.1.8-2 | 7.1.7-1 | 2026-08-07 | :white_check_mark: Fixed |
+| Debian | sid (unstable) | 7.1.8-2 | 7.1.6-1 | 2026-08-04 | :white_check_mark: Fixed |
+| Debian | forky (testing) | 7.1.8-1 | 7.1.6-1 | 2026-08-08 | :white_check_mark: Fixed |
 | Debian | 13 (trixie) | 6.12.101-1 | 6.12.101-1 | 2026-08-06 | :white_check_mark: Fixed — DSA-6415-1 |
 | Debian | 12 (bookworm) | 6.1.180-1 | — | — | :x: Vulnerable |
 | Debian | 12 (6.12 opt-in) | 6.12.101-1~deb12u1 | 6.12.101-1~deb12u1 | 2026-08-15 | :white_check_mark: Fixed |
@@ -166,9 +167,12 @@ picks up the backport, most likely in a later stable release batch.
 ### Debian
 
 Debian's status splits on which upstream branch each suite tracks.
-**trixie** (Debian 13) ships `6.12.101-1`, which is exactly the 6.12
-branch's first-fixed release, so it is **fixed**; **sid** at `7.1.7-1`
-(above the 7.1 branch's 7.1.6 first-fixed) is **fixed** too. **bookworm**
+**sid** and **forky** (testing, the future Debian 14) follow the 7.1
+line: sid has been **fixed** since the `7.1.6-1` upload (upstream 7.1.6
+is the branch's first-fixed release), and forky since that same version
+migrated to testing on 2026-08-08. **trixie** (Debian 13) ships
+`6.12.101-1`, which is exactly the 6.12 branch's first-fixed release, so
+it is **fixed** too. **bookworm**
 (`6.1.180-1`) rides the 6.1 line and **bullseye** (`5.10.262-1`) the 5.10
 line — neither branch has the backport yet, so both are **vulnerable**, as
 the Debian security tracker records. When the 6.1.y and 5.10.y stable lines
@@ -462,20 +466,26 @@ readers never need it.
 
 #### Distributions
 
-- **Debian** (Debian security tracker, CVE-2026-64564): trixie
-  `6.12.101-1` and sid `7.1.8-2` resolved *fixed*; bookworm `6.1.180-1`
-  and bullseye `5.10.262-1` *vulnerable* (their branches carry no
-  backport). Opt-in kernels from their source-package tracker pages
-  (security-tracker does not assess `CVE-2026-64564` against either
-  opt-in source package by name, so status is derived from a version
-  compare against the branch's first-fixed release): bookworm
-  `linux-6.12` reached `6.12.101-1~deb12u1` — the 6.12 branch's
-  first-fixed release — so it is *fixed*; bullseye `linux-6.1` stays at
-  `6.1.180-1~deb11u1` (6.1 line unpatched), so it is *vulnerable*.
-  *Fixed since* from snapshot.debian.org `first_seen`: sid `7.1.7-1`
-  2026-08-07, trixie `6.12.101-1` 2026-08-06 (shipped via
-  **DSA-6415-1**), bookworm `linux-6.12` `6.12.101-1~deb12u1`
-  2026-08-15.
+- **Debian** (Debian security tracker, CVE-2026-64564):
+  - sid `7.1.8-2` resolved *fixed*; the tracker's fixed version for
+    unstable is `7.1.6-1` (upstream 7.1.6, the 7.1 branch's
+    first-fixed release), first seen 2026-08-04 per snapshot.debian.org.
+  - forky `7.1.8-1` resolved *fixed*; `7.1.6-1` migrated to testing
+    2026-08-08 (via tracker.debian.org testing watch), the first fixed
+    kernel in the suite.
+  - trixie `6.12.101-1` resolved *fixed*, shipped via **DSA-6415-1**
+    (trixie-security, first seen 2026-08-06).
+  - bookworm `6.1.180-1` *vulnerable* (6.1.y carries no backport).
+  - bookworm `linux-6.12` opt-in reached `6.12.101-1~deb12u1`
+    (bookworm-security, first seen 2026-08-15) — the 6.12 branch's
+    first-fixed release — so it is *fixed*; security-tracker does not
+    assess `CVE-2026-64564` against the opt-in source packages by name,
+    so status is a version compare against the branch's first-fixed
+    release.
+  - bullseye `5.10.262-1` *vulnerable* (5.10.y carries no backport).
+  - bullseye `linux-6.1` opt-in stays at `6.1.180-1~deb11u1` (6.1 line
+    unpatched), so it is *vulnerable* — same version-compare method as
+    bookworm's opt-in.
 - **Proxmox VE** (`~/src/proxmox/pve-kernel`): patch
   `…-sctp-don-t-free-the-ASCONF-s-own-transport-in-DEL-IP.patch` present as
   `0059-…` in the `proxmox-kernel-7.0` tree (branch `master`) and `0034-…`
