@@ -22,6 +22,10 @@
 # a scratch checkout.
 
 set -eu
+# pipefail so a failure on the left of the final prompt|claude
+# pipeline (e.g. the prompt file turning unreadable mid-run) fails
+# the unit instead of feeding claude a preamble-only prompt.
+set -o pipefail
 
 CODE="$(realpath "$(dirname "${0}")/..")"
 SLUG="${CODE##*/}"
@@ -50,7 +54,8 @@ echo "SCTPhantom tracker auto-update starting ($(date -u +%FT%TZ))"
 # Refresh the local clones the agent reads via origin/... refs.
 # Doing this here, rather than in the prompt, makes the refresh
 # deterministic — a headless agent occasionally skips these and
-# then reports findings against stale remote-tracking refs.
+# then reports findings against stale remote-tracking refs (e.g. a
+# nixos channel pointer advancing past the local nixpkgs clone).
 #
 # The tracker jobs run minutes apart and share these clones, so
 # skip a clone any of them refreshed within the last 2 hours. git
@@ -82,6 +87,9 @@ fetch_if_stale "${HOME}/src/linux/net" linux-net origin
 # vulns: the kernel CVE -> fix-commit / fixed-version database. Keeps the
 # per-branch dyad lookup for CVE-2026-64564 fresh.
 fetch_if_stale "${HOME}/src/linux/vulns" linux-vulns origin
+# nixpkgs: the channel package pins for the NixOS rows, and the
+# history scripts/nixos-first-shipped resolves release revisions
+# against.
 fetch_if_stale "${HOME}/src/nixos/nixpkgs" nixpkgs origin
 # pve-kernel: Proxmox's kernel packaging repo, where every security
 # cherry-pick is listed by name/CVE in debian/changelog. Shared like
@@ -131,11 +139,19 @@ then
 fi
 
 # Headless run. Permission scope (Read/Edit the tracker, WebFetch and
-# curl the sources, zcat/gunzip for the gzipped package indexes, git +
+# curl the sources, the read-only lookup helpers in scripts/, git +
 # date for the commit step) goes in --settings JSON because
 # --allowed-tools on the CLI silently ignores Bash patterns.
 # `default` mode under -p with no TTY refuses anything outside the
 # allowlist without prompting.
+#
+# The git rules are enumerated per subcommand rather than `git:*` on
+# purpose: publishing is a breakpoint that needs a human. Read-only
+# git commands are auto-classified as safe and run either way, but a
+# mutating one needs a matching rule -- so with no rule for it, the
+# permission system refuses to publish, rather than that resting on
+# prose in the prompt. `gh` is absent for the same reason, so no PR
+# can be opened either.
 #
 # Scratch files live in the worktree: Claude Code confines Bash file
 # reads to the session working directory, so /tmp scratch can be
@@ -145,22 +161,51 @@ fi
 # anything else outside the worktree. The git clean above sweeps
 # any scratch files a run forgets.
 #
-# The git rules are enumerated per subcommand rather than `git:*` on
-# purpose. Read-only commands are auto-classified as safe and run
-# either way, but a mutating one needs a matching rule -- so with no
-# rule for it, publishing is refused by the permission system rather
-# than only by prose in the prompt. `gh` is absent for the same
-# reason, so no PR can be opened either.
-#
 # The deny rules keep the agent from rewriting its own executable
 # surface mid-run; the guard above only sees the tree as it stood at
 # the start. Only Edit(...) rules apply to file writes -- a Write(...)
 # rule is ignored (Claude Code warns when one is present).
-exec claude -p \
+#
+# The verification recipes live in scripts/ rather than as inline
+# pipelines, which keeps awk and sed out of the allowlist too.
+#
+# Those helpers are the one thing the agent both runs and could write,
+# so they are invoked from CODE, never from the worktree. An Edit deny
+# rule alone would not hold: `curl -o` writes a file without going
+# through any file-editing tool. Allowlisting only the CODE path means
+# a worktree copy is not runnable even if something overwrites it.
+# The rule and the path handed to the agent are the same string, so
+# they cannot drift apart.
+HELPERS="${CODE}/scripts"
+
+# zcat/gunzip unpack the gzipped repodata and Packages indexes, and
+# git describe maps a fix commit to the release that carries it --
+# kernel-side lookups the package variant does not need.
+settings="$(cat <<EOF
+{"permissions":{"allow":["Read","Edit","WebFetch","Bash(date:*)","Bash(rm:*)","Bash(curl:*)","Bash(zcat:*)","Bash(gunzip:*)","Bash(${HELPERS}/nixos-first-shipped:*)","Bash(git add:*)","Bash(git commit:*)","Bash(git diff:*)","Bash(git log:*)","Bash(git show:*)","Bash(git status:*)","Bash(git describe:*)"],"deny":["Edit(./scripts/**)","Edit(./.claude/**)"]}}
+EOF
+)"
+
+# The prompt keeps saying ./scripts/<helper>; the preamble redirects
+# those to CODE without every recipe in it having to spell out a path
+# that only exists at run time.
+if [ ! -r "${CODE}/scripts/auto-update-prompt.txt" ]
+then
+  echo "${0##*/}: cannot read ${CODE}/scripts/auto-update-prompt.txt" 1>&2
+  exit 1
+fi
+
+{
+  echo "The verification helpers this prompt calls ./scripts/<helper>"
+  echo "live in ${HELPERS}. Invoke each one by that absolute path"
+  echo "(${HELPERS}/<helper>); the worktree copies are not permitted."
+  echo
+  cat "${CODE}/scripts/auto-update-prompt.txt"
+} |
+claude -p \
   --model claude-sonnet-5 \
   --permission-mode default \
-  --settings '{"permissions":{"allow":["Read","Edit","WebFetch","Bash(date:*)","Bash(rm:*)","Bash(curl:*)","Bash(zcat:*)","Bash(gunzip:*)","Bash(git add:*)","Bash(git commit:*)","Bash(git diff:*)","Bash(git log:*)","Bash(git show:*)","Bash(git status:*)","Bash(git describe:*)"],"deny":["Edit(./scripts/**)","Edit(./.claude/**)"]}}' \
+  --settings "${settings}" \
   --output-format text \
   --no-session-persistence \
-  --max-budget-usd 10 \
-  < "${CODE}/scripts/auto-update-prompt.txt"
+  --max-budget-usd 10
