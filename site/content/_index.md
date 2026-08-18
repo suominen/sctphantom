@@ -3,7 +3,7 @@ title: "SCTPhantom — SCTP ASCONF transport use-after-free"
 description: "Linux kernel SCTP ASCONF DEL-IP use-after-free (CVE-2026-64564, SCTPhantom) — remote-triggerable transport UAF, local privilege escalation and container-to-host escape — distro patch status tracker"
 layout: "single"
 date: 2026-08-10
-lastmod: 2026-08-17
+lastmod: 2026-08-18
 cover:
   image: "sctphantom-tracker.png"
   alt: "SCTPhantom — Linux kernel SCTP ASCONF transport use-after-free tracker"
@@ -144,9 +144,9 @@ is fixed.
 | Rocky Linux / RHEL | 10 | 6.12.0-211.47.1.el10_2 | — | — | :x: Vulnerable — no RHSA yet |
 | Rocky Linux / RHEL | 9 | 5.14.0-687.39.1.el9_8 | — | — | :x: Vulnerable — no RHSA yet |
 | Rocky Linux / RHEL | 8 | 4.18.0-553.155.1.el8_10 | — | — | :x: Vulnerable — no RHSA yet |
-| Amazon Linux | 2023 (default) | 6.1.177-224.371 | — | — | :x: Vulnerable — no ALAS yet |
-| Amazon Linux | 2023 (6.12 opt-in) | 6.12.95-124.187 | — | — | :x: Vulnerable — no ALAS yet |
-| Amazon Linux | 2023 (6.18 opt-in) | 6.18.39-79.141 | — | — | :x: Vulnerable — no ALAS yet |
+| Amazon Linux | 2023 (default) | 6.1.180-225.360 | — | — | :x: Vulnerable — no ALAS yet |
+| Amazon Linux | 2023 (6.12 opt-in) | 6.12.100-125.179 | — | — | :x: Vulnerable — no ALAS yet, below 6.12.101 fix |
+| Amazon Linux | 2023 (6.18 opt-in) | 6.18.41-94.142 | — | — | :x: Vulnerable — no ALAS yet |
 {.distros}
 
 ### Linux kernel
@@ -261,12 +261,13 @@ CloudLinux track the RHEL determination.
 ### Amazon Linux
 
 No ALAS has been issued for this CVE, so every AL2023 kernel stream — the
-default `kernel` (`6.1.177-224.371`), the `kernel6.12` (`6.12.95-124.187`)
-and `kernel6.18` (`6.18.39-79.141`) opt-ins — remains **vulnerable**
+default `kernel` (`6.1.180-225.360`), the `kernel6.12` (`6.12.100-125.179`)
+and `kernel6.18` (`6.18.41-94.142`) opt-ins — remains **vulnerable**
 pending an Amazon cherry-pick. All three lines are in-window; the 6.12 and
 6.18 opt-ins turn fixed only once they cross their branches' `6.12.101` /
-`6.18.42` first-fixed releases, and the 6.1 default only when the 6.1.y
-line itself is patched.
+`6.18.42` first-fixed releases (the 6.12 opt-in is one point release
+below its fix), and the 6.1 default only when the 6.1.y line itself is
+patched.
 
 ## Detection
 
@@ -540,8 +541,8 @@ readers never need it.
   for this CVE yet, so AlmaLinux is not ahead of the bare VEX record.
 - **Amazon Linux**: no ALAS for CVE-2026-64564 in the AL2023
   `updateinfo.xml.gz`. Current per-stream kernels from
-  `primary.xml.gz`: default `kernel` `6.1.177-224.371`, `kernel6.12`
-  `6.12.95-124.187`, `kernel6.18` `6.18.39-79.141` — all in-window and
+  `primary.xml.gz`: default `kernel` `6.1.180-225.360`, `kernel6.12`
+  `6.12.100-125.179`, `kernel6.18` `6.18.41-94.142` — all in-window and
   below their branches' first-fixed releases.
 {{< /details >}}
 
