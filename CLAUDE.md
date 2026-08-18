@@ -64,6 +64,10 @@ A scheduled background agent runs against this repo to refresh the tracker
 on its own.  If you find the file has been edited since you last looked,
 that's likely why — re-read before assuming stale state.
 
+To retire (archive) this tracker — when every tracked distribution has
+shipped a fix, or the bug is otherwise no longer worth active tracking —
+follow `~/src/cve-tracker-template/LIFECYCLE.md` § "Retiring a tracker".
+
 ## Repo layout
 
 ```
