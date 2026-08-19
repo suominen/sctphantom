@@ -3,7 +3,7 @@ title: "SCTPhantom — SCTP ASCONF transport use-after-free"
 description: "Linux kernel SCTP ASCONF DEL-IP use-after-free (CVE-2026-64564, SCTPhantom) — remote-triggerable transport UAF, local privilege escalation and container-to-host escape — distro patch status tracker"
 layout: "single"
 date: 2026-08-10
-lastmod: 2026-08-18
+lastmod: 2026-08-19
 cover:
   image: "sctphantom-tracker.png"
   alt: "SCTPhantom — Linux kernel SCTP ASCONF transport use-after-free tracker"
@@ -143,7 +143,7 @@ is fixed.
 | NixOS | 26.05 (small) | 6.18.44 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
 | Rocky Linux / RHEL | 10 | 6.12.0-211.47.1.el10_2 | — | — | :x: Vulnerable — no RHSA yet |
 | Rocky Linux / RHEL | 9 | 5.14.0-687.39.1.el9_8 | — | — | :x: Vulnerable — no RHSA yet |
-| Rocky Linux / RHEL | 8 | 4.18.0-553.155.1.el8_10 | — | — | :x: Vulnerable — no RHSA yet |
+| Rocky Linux / RHEL | 8 | 4.18.0-553.156.1.el8_10 | — | — | :x: Vulnerable — no RHSA yet |
 | Amazon Linux | 2023 (default) | 6.1.180-225.360 | — | — | :x: Vulnerable — no ALAS yet |
 | Amazon Linux | 2023 (6.12 opt-in) | 6.12.100-125.179 | — | — | :x: Vulnerable — no ALAS yet, below 6.12.101 fix |
 | Amazon Linux | 2023 (6.18 opt-in) | 6.18.41-94.142 | — | — | :x: Vulnerable — no ALAS yet |
@@ -537,7 +537,7 @@ readers never need it.
   autoload — earlier entries here misread this as EL10-only. Current
   BaseOS kernels from Rocky repodata (`primary.xml.gz`, highest `rel`):
   Rocky 10 `6.12.0-211.47.1.el10_2`, Rocky 9 `5.14.0-687.39.1.el9_8`,
-  Rocky 8 `4.18.0-553.155.1.el8_10`. No AlmaLinux errata or OSV entry
+  Rocky 8 `4.18.0-553.156.1.el8_10`. No AlmaLinux errata or OSV entry
   for this CVE yet, so AlmaLinux is not ahead of the bare VEX record.
 - **Amazon Linux**: no ALAS for CVE-2026-64564 in the AL2023
   `updateinfo.xml.gz`. Current per-stream kernels from
