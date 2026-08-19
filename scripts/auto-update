@@ -20,6 +20,11 @@
 #
 # The worktree path can be overridden by argument, for testing against
 # a scratch checkout.
+#
+# One wrapper serves both tracker kinds. MODE below is seeded per
+# tracker: kernel reads the ~/src/linux/* kernel clones (plus nixpkgs
+# and pve-kernel); package reads the distro package clones (nixpkgs
+# and pkgsrc).
 
 set -eu
 # pipefail so a failure on the left of the final prompt|claude
@@ -27,19 +32,35 @@ set -eu
 # the unit instead of feeding claude a preamble-only prompt.
 set -o pipefail
 
+PROG="${0##*/}"
+
+# Which clone set to refresh and which mode-only tools to allowlist.
+# Seeded per tracker from the template; an unrecognised value
+# fails the check below.
+MODE='kernel'
+
+case "${MODE}" in
+kernel|package)
+  ;;
+*)
+  echo "${PROG}: MODE must be 'kernel' or 'package' (got '${MODE}')" 1>&2
+  exit 1
+  ;;
+esac
+
 CODE="$(realpath "$(dirname "${0}")/..")"
 SLUG="${CODE##*/}"
 WORKTREE="${1:-${HOME}/src/auto-update/${SLUG}}"
 
 if [ ! -d "${WORKTREE}/.git" ] && [ ! -f "${WORKTREE}/.git" ]
 then
-  echo "${0##*/}: no git worktree at ${WORKTREE}" 1>&2
+  echo "${PROG}: no git worktree at ${WORKTREE}" 1>&2
   exit 1
 fi
 
 if [ "$(realpath "${WORKTREE}")" = "${CODE}" ]
 then
-  echo "${0##*/}: refusing to run from the agent-writable worktree;" \
+  echo "${PROG}: refusing to run from the agent-writable worktree;" \
        'invoke scripts/auto-update from the primary checkout' 1>&2
   exit 1
 fi
@@ -76,26 +97,36 @@ fetch_if_stale()
     return 0
   fi
   git -C "${repo}" fetch --quiet "${@}" ||
-    echo "${0##*/}: warn: ${label} fetch failed" 1>&2
+    echo "${PROG}: warn: ${label} fetch failed" 1>&2
 }
 
-fetch_if_stale "${HOME}/src/linux/stable" linux-stable --all --tags
-# net: the netdev "net" tree, where networking fixes (SCTP among them)
-# land and get tagged for stable before they reach Linus. Handy for
-# confirming a backport's provenance early.
-fetch_if_stale "${HOME}/src/linux/net" linux-net origin
-# vulns: the kernel CVE -> fix-commit / fixed-version database. Keeps the
-# per-branch dyad lookup for CVE-2026-64564 fresh.
-fetch_if_stale "${HOME}/src/linux/vulns" linux-vulns origin
 # nixpkgs: the channel package pins for the NixOS rows, and the
 # history scripts/nixos-first-shipped resolves release revisions
-# against.
+# against. Both tracker kinds read it.
 fetch_if_stale "${HOME}/src/nixos/nixpkgs" nixpkgs origin
-# pve-kernel: Proxmox's kernel packaging repo, where every security
-# cherry-pick is listed by name/CVE in debian/changelog. Shared like
-# the others, so the agent reads it via origin/... refs instead of
-# cloning it per run into the worktree.
-fetch_if_stale "${HOME}/src/proxmox/pve-kernel" pve-kernel origin
+
+case "${MODE}" in
+kernel)
+  fetch_if_stale "${HOME}/src/linux/stable" linux-stable --all --tags
+  # net: the netdev "net" tree, where networking fixes (SCTP among them)
+  # land and get tagged for stable before they reach Linus. Handy for
+  # confirming a backport's provenance early.
+  fetch_if_stale "${HOME}/src/linux/net" linux-net origin
+  # vulns: the kernel CVE -> fix-commit / fixed-version database. Keeps the
+  # per-branch dyad lookup for CVE-2026-64564 fresh.
+  fetch_if_stale "${HOME}/src/linux/vulns" linux-vulns origin
+  # pve-kernel: Proxmox's kernel packaging repo, where every security
+  # cherry-pick is listed by name/CVE in debian/changelog. Shared like
+  # the others, so the agent reads it via origin/... refs instead of
+  # cloning it per run into the worktree.
+  fetch_if_stale "${HOME}/src/proxmox/pve-kernel" pve-kernel origin
+  ;;
+package)
+  # pkgsrc: DISTNAME / PKGREVISION / patches on trunk and the current
+  # quarterly branch. Drop this if the tracker has no pkgsrc rows.
+  fetch_if_stale "${HOME}/src/netbsd/pkgsrc" pkgsrc origin
+  ;;
+esac
 
 git fetch --quiet origin
 
@@ -178,11 +209,62 @@ fi
 # they cannot drift apart.
 HELPERS="${CODE}/scripts"
 
-# zcat/gunzip unpack the gzipped repodata and Packages indexes, and
-# git describe maps a fix commit to the release that carries it --
-# kernel-side lookups the package variant does not need.
-settings="$(cat <<EOF
-{"permissions":{"allow":["Read","Edit","WebFetch","Bash(date:*)","Bash(rm:*)","Bash(curl:*)","Bash(zcat:*)","Bash(gunzip:*)","Bash(${HELPERS}/nixos-first-shipped:*)","Bash(git add:*)","Bash(git commit:*)","Bash(git diff:*)","Bash(git log:*)","Bash(git show:*)","Bash(git status:*)","Bash(git describe:*)"],"deny":["Edit(./scripts/**)","Edit(./.claude/**)"]}}
+# The core allowlist in the settings heredoc below is shared;
+# mode_tools adds only what this tracker kind's lookup recipes need.
+case "${MODE}" in
+kernel)
+  # zcat/gunzip unpack the gzipped repodata and Packages indexes, and
+  # git describe maps a fix commit to the release that carries it --
+  # kernel-side lookups package mode does not need.
+  mode_tools='
+    "Bash(zcat:*)",
+    "Bash(gunzip:*)",
+    "Bash(git describe:*)"
+  '
+  ;;
+package)
+  # nixpkgs-versions / pkgsrc-versions are the package-side lookup
+  # helpers, and git ls-tree / cat-file / merge-base back their
+  # revision lookups -- package-side needs kernel mode does not have.
+  # A heredoc, not a single-quoted literal, so ${HELPERS} expands here:
+  # the outer settings heredoc would not re-expand it, and the rule
+  # would never match the path the preamble hands the agent.
+  mode_tools="$(cat << EOF
+    "Bash(${HELPERS}/nixpkgs-versions:*)",
+    "Bash(${HELPERS}/pkgsrc-versions:*)",
+    "Bash(git ls-tree:*)",
+    "Bash(git cat-file:*)",
+    "Bash(git merge-base:*)"
+EOF
+)"
+  ;;
+esac
+
+settings="$(jq -c . << EOF
+  {
+    "permissions": {
+      "allow": [
+	"Read",
+	"Edit",
+	"WebFetch",
+	"Bash(date:*)",
+	"Bash(rm:*)",
+	"Bash(curl:*)",
+	"Bash(${HELPERS}/nixos-first-shipped:*)",
+	"Bash(git add:*)",
+	"Bash(git commit:*)",
+	"Bash(git diff:*)",
+	"Bash(git log:*)",
+	"Bash(git show:*)",
+	"Bash(git status:*)",
+	${mode_tools}
+      ],
+      "deny": [
+	"Edit(./scripts/**)",
+	"Edit(./.claude/**)"
+      ]
+    }
+  }
 EOF
 )"
 
@@ -191,7 +273,7 @@ EOF
 # that only exists at run time.
 if [ ! -r "${CODE}/scripts/auto-update-prompt.txt" ]
 then
-  echo "${0##*/}: cannot read ${CODE}/scripts/auto-update-prompt.txt" 1>&2
+  echo "${PROG}: cannot read ${CODE}/scripts/auto-update-prompt.txt" 1>&2
   exit 1
 fi
 
