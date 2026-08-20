@@ -31,6 +31,12 @@ PrivateTmp=yes
 # one directory rather than all of ~/.claude, which holds the
 # user-level permission settings and plugins.
 ReadWritePaths=%h/.claude/session-env
+# Session transcripts land here (the wrapper runs claude without
+# --no-session-persistence); the write fails silently under a
+# read-only home, so the grant is what makes transcripts actually
+# appear.  Transcript data only -- settings and plugins stay
+# read-only above.
+ReadWritePaths=%h/.claude/projects
 ReadWritePaths=%h/src/auto-update/sctphantom
 ReadWritePaths=%h/src/sctphantom/.git
 ReadOnlyPaths=%h/src/sctphantom/.git/hooks

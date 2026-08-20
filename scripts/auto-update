@@ -216,11 +216,25 @@ kernel)
   # zcat/gunzip unpack the gzipped repodata and Packages indexes, and
   # git describe maps a fix commit to the release that carries it --
   # kernel-side lookups package mode does not need.
-  mode_tools='
+  #
+  # The pve-kernel branch-listing rules cover the one read the
+  # classifier refuses: `git branch -r` behind `git -C` is not
+  # auto-classified read-only-safe (Claude Code 2.1.236 tightened the
+  # classifier), unlike the `git -C ... log/show/grep` reads, and a
+  # bare `Bash(git branch:*)` rule never matches the `git -C` form --
+  # matching is a literal prefix on the command the agent types. The
+  # `-r` stays in the rule so mutating `git branch` forms remain
+  # refused, and the two home-directory spellings cover the phrasings
+  # the recipes use; any other spelling fails closed. A heredoc, not
+  # a single-quoted literal, so ${HOME} expands in the second rule.
+  mode_tools="$(cat << EOF
     "Bash(zcat:*)",
     "Bash(gunzip:*)",
-    "Bash(git describe:*)"
-  '
+    "Bash(git describe:*)",
+    "Bash(git -C ~/src/proxmox/pve-kernel branch -r:*)",
+    "Bash(git -C ${HOME}/src/proxmox/pve-kernel branch -r:*)"
+EOF
+)"
   ;;
 package)
   # nixpkgs-versions / pkgsrc-versions are the package-side lookup
@@ -284,10 +298,14 @@ fi
   echo
   cat "${CODE}/scripts/auto-update-prompt.txt"
 } |
+# Session transcripts are kept: each run's session lands under
+# ~/.claude/projects/<worktree-slug>/ and is the only per-command
+# record of what the permission system allowed or denied -- the
+# journal carries just the agent's final summary. The user-level
+# cleanupPeriodDays setting prunes them.
 claude -p \
   --model claude-sonnet-5 \
   --permission-mode default \
   --settings "${settings}" \
   --output-format text \
-  --no-session-persistence \
   --max-budget-usd 10
