@@ -307,6 +307,18 @@ Each run:
 `Packages.gz` / repodata pulls.  Pull only kernel versions and advisory
 state — the tracker records no other per-distro facts.
 
+**Live versions appear only in the *Patch status* table.**  Never repeat
+a row's *Current kernel* value (or any other value the routine run
+refreshes) in the `###` prose or the verification log.  Prose and log
+name kernel *series/lines* (`the 6.12 line`) and sticky facts
+(first-fixed versions, tag/ship/migration dates) only; a log entry
+records the *source and method* for a live value (e.g. "*Current
+kernel* read from BaseOS `primary.xml.gz`, highest `rel`"), never the
+value itself.  A sticky fact that happens to equal today's live value
+stays — it is recorded for the event, not refreshed.  A routine
+Current-kernel bump then edits table cells (plus `lastmod`) and nothing
+else.
+
 **Never record NixOS channel git-revisions** (the
 `channels.nixos.org/<channel>/git-revision` pins) in the tracker.  They
 advance on nearly every run — recording them manufactures a diff on an

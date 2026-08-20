@@ -171,20 +171,21 @@ Debian's status splits on which upstream branch each suite tracks.
 **sid** and **forky** (testing, the future Debian 14) follow the 7.1
 line: sid has been **fixed** since the `7.1.6-1` upload (upstream 7.1.6
 is the branch's first-fixed release), and forky since that same version
-migrated to testing on 2026-08-08. **trixie** (Debian 13) ships
-`6.12.101-1`, which is exactly the 6.12 branch's first-fixed release, so
-it is **fixed** too. **bookworm**
-(`6.1.180-1`) rides the 6.1 line and **bullseye** (`5.10.262-1`) the 5.10
-line — neither branch has the backport yet, so both are **vulnerable**, as
-the Debian security tracker records. When the 6.1.y and 5.10.y stable lines
-gain the fix (or Debian cherry-picks it), bookworm and bullseye follow.
+migrated to testing on 2026-08-08. **trixie** (Debian 13) shipped the
+fix as `6.12.101-1` — exactly the 6.12 branch's first-fixed release —
+so it is **fixed** too. **bookworm** rides the 6.1 line and
+**bullseye** the 5.10 line; both lines now carry an upstream fix
+(6.1.183 / 5.10.265, 2026-08-19), but neither suite has shipped a
+kernel with the backport, so both are **vulnerable**, as the Debian
+security tracker records. They follow once Debian rebases onto the
+fixed point releases or cherry-picks the fix.
 
 Both older suites also offer an **opt-in newer kernel**. bookworm's
 `linux-6.12` (bookworm-security) reached `6.12.101-1~deb12u1` on
 2026-08-15 — exactly the 6.12 branch's first-fixed release — so it is
 **fixed**, independently of the still-vulnerable bookworm default.
-bullseye's `linux-6.1` (bullseye-security, `6.1.180-1~deb11u1`) rides the
-still-unpatched 6.1 line and stays **vulnerable**.
+bullseye's `linux-6.1` (bullseye-security) rebuilds the 6.1 line but has
+not reached its `6.1.183` first fix, so it stays **vulnerable**.
 
 SCTP itself is not built into Debian's kernel image but shipped as the
 `sctp` module, autoloaded on first use of an `AF_INET`/`IPPROTO_SCTP`
@@ -265,13 +266,11 @@ CloudLinux track the RHEL determination.
 ### Amazon Linux
 
 No ALAS has been issued for this CVE, so every AL2023 kernel stream — the
-default `kernel` (`6.1.180-225.360`), the `kernel6.12` (`6.12.100-125.179`)
-and `kernel6.18` (`6.18.41-94.142`) opt-ins — remains **vulnerable**
-pending an Amazon cherry-pick. All three lines are in-window; the 6.12 and
-6.18 opt-ins turn fixed only once they cross their branches' `6.12.101` /
-`6.18.42` first-fixed releases (the 6.12 opt-in is one point release
-below its fix), and the 6.1 default only when the 6.1.y line itself is
-patched.
+default `kernel` (the 6.1 line) and the `kernel6.12` and `kernel6.18`
+opt-ins — remains **vulnerable** pending an Amazon cherry-pick. All
+three streams sit below their branches' first-fixed releases (`6.1.183`
+/ `6.12.101` / `6.18.42`); each turns fixed when Amazon ships a
+cherry-pick or the stream crosses its branch's first fix.
 
 ## Detection
 
@@ -443,9 +442,9 @@ readers never need it.
 - **Stable backports** (fix cherry-picks confirmed by subject grep against
   `~/src/linux/stable`, each a new SHA): 6.6.148 (`fedeb4468987`), 6.12.101
   (`74e8f3e7114f`), 6.18.42 (`85aca407c560`), 7.1.6 (`d136b29bf91d`) — all
-  tagged **2026-08-03** (commit dates 11:15–11:26 +0200). `finger_banner`
-  current point releases (7.1.9, 6.18.45, 6.12.104, 6.6.152) are at or
-  above them.
+  tagged **2026-08-03** (commit dates 11:15–11:26 +0200). The `Linux
+  kernel` rows' *Current kernel* cells are read from kernel.org's
+  `finger_banner`.
 - **6.1.y / 5.15.y / 5.10.y backports** (fix cherry-picks confirmed by
   subject grep against `~/src/linux/stable`, each a new SHA, and by the
   `.dyad`): 6.1.183 (`2b324ba3494a`), 5.15.216 (`a63afa1f9b12`), 5.10.265
@@ -475,25 +474,29 @@ readers never need it.
 #### Distributions
 
 - **Debian** (Debian security tracker, CVE-2026-64564):
-  - sid `7.1.8-2` resolved *fixed*; the tracker's fixed version for
-    unstable is `7.1.6-1` (upstream 7.1.6, the 7.1 branch's
-    first-fixed release), first seen 2026-08-04 per snapshot.debian.org.
-  - forky `7.1.8-1` resolved *fixed*; `7.1.6-1` migrated to testing
-    2026-08-08 (via tracker.debian.org testing watch), the first fixed
-    kernel in the suite.
-  - trixie `6.12.101-1` resolved *fixed*, shipped via **DSA-6415-1**
-    (trixie-security, first seen 2026-08-06).
-  - bookworm `6.1.180-1` *vulnerable* (6.1.y carries no backport).
+  - sid resolved *fixed*; the tracker's fixed version for unstable is
+    `7.1.6-1` (upstream 7.1.6, the 7.1 branch's first-fixed release),
+    first seen 2026-08-04 per snapshot.debian.org.
+  - forky resolved *fixed*; `7.1.6-1` migrated to testing 2026-08-08
+    (via tracker.debian.org testing watch), the first fixed kernel in
+    the suite.
+  - trixie resolved *fixed*; first fixed `6.12.101-1`, shipped via
+    **DSA-6415-1** (trixie-security, first seen 2026-08-06).
+  - bookworm *vulnerable* — Debian has not adopted the 6.1.y line's
+    `6.1.183` fix.
   - bookworm `linux-6.12` opt-in reached `6.12.101-1~deb12u1`
     (bookworm-security, first seen 2026-08-15) — the 6.12 branch's
     first-fixed release — so it is *fixed*; security-tracker does not
     assess `CVE-2026-64564` against the opt-in source packages by name,
     so status is a version compare against the branch's first-fixed
     release.
-  - bullseye `5.10.262-1` *vulnerable* (5.10.y carries no backport).
-  - bullseye `linux-6.1` opt-in stays at `6.1.180-1~deb11u1` (6.1 line
-    unpatched), so it is *vulnerable* — same version-compare method as
-    bookworm's opt-in.
+  - bullseye *vulnerable* — Debian has not adopted the 5.10.y line's
+    `5.10.265` fix.
+  - bullseye `linux-6.1` opt-in remains below the 6.1 branch's
+    `6.1.183` first fix, so it is *vulnerable* — same version-compare
+    method as bookworm's opt-in.
+  - The rows' *Current kernel* values come from ftp-master madison and
+    the tracker's `<suite>-security` `repositories` entries.
 - **Proxmox VE** (`~/src/proxmox/pve-kernel`): patch
   `…-sctp-don-t-free-the-ASCONF-s-own-transport-in-DEL-IP.patch` present as
   `0059-…` in the `proxmox-kernel-7.0` tree (branch `master`) and `0034-…`
@@ -504,11 +507,10 @@ readers never need it.
   CVE identifiers were tagged in `38fa3e0` / `6daa7f0` (2026-08-07). The
   `pve-no-subscription` `Packages.gz` indexes publish both first-fixed
   builds (`proxmox-kernel-7.0.14-10-pve` in trixie,
-  `proxmox-kernel-6.8.12-41-pve` in bookworm); the current
-  `proxmox-kernel-7.0` / `-6.8` meta versions there are `7.0.14-12` and
-  `6.8.12-42`.
+  `proxmox-kernel-6.8.12-41-pve` in bookworm); the rows' *Current
+  kernel* builds are read from the same indexes.
   - `proxmox-default-kernel`'s `Depends` confirms the live defaults:
-    `7.0` on trixie (PVE 9), `6.8` on bookworm (PVE 8) — both unchanged.
+    `7.0` on trixie (PVE 9), `6.8` on bookworm (PVE 8).
   - Pre-GA preview series still published but no longer updated, none
     carrying the fix: PVE 9's `proxmox-kernel-6.14` (branch
     `trixie-6.14`, last build `6.14.11-9`, 2026-05-15) and
@@ -519,14 +521,12 @@ readers never need it.
     disclosure.
 - **NixOS** (`~/src/nixos/nixpkgs`): `linux_default = packages.linux_6_18`;
   every tracked ref resolves `6.18` at or above the `6.18.42` first-fixed
-  release, so all seven rows are fixed. *Current kernel* from each ref's
-  `kernels-org.json`: `master`, `release-26.05`, `nixos-unstable-small`,
-  and `nixos-26.05-small` at `6.18.45`; `nixos-unstable`, `nixpkgs-unstable`,
-  and `nixos-26.05` at `6.18.44` (branch tips for `master` /
-  `release-26.05`, channel `git-revision` pins for the other five). At the
-  same refs, `linux_6_1` / `linux_5_15` / `linux_5_10` resolve to `6.1.183`
-  / `5.15.216` / `5.10.265` — each at or above its branch's first-fixed
-  release.
+  release, so all seven rows are fixed. Each row's *Current kernel* is
+  the `6.18` version `kernels-org.json` resolves at that ref (branch
+  tips for `master` / `release-26.05`, channel `git-revision` pins for
+  the other five). At the same refs, `linux_6_1` / `linux_5_15` /
+  `linux_5_10` also resolve at or above their branches' first-fixed
+  releases.
   *Fixed since*: the branch rows use the commit date of the 6.18.42 bump
   (`b658e06342e8` on master, `33565191d37a` on release-26.05, both
   2026-08-03); the channel rows use `scripts/nixos-first-shipped`
@@ -543,16 +543,14 @@ readers never need it.
   Rocky 8 / 9 / 10 `sctp.ko` ships in `kernel-modules-extra`, and every
   build of that package also installs
   `/etc/modprobe.d/sctp-blacklist.conf` (`blacklist sctp`), suppressing
-  autoload — earlier entries here misread this as EL10-only. Current
-  BaseOS kernels from Rocky repodata (`primary.xml.gz`, highest `rel`):
-  Rocky 10 `6.12.0-211.47.1.el10_2`, Rocky 9 `5.14.0-687.39.1.el9_8`,
-  Rocky 8 `4.18.0-553.156.1.el8_10`. No AlmaLinux errata or OSV entry
+  autoload — earlier entries here misread this as EL10-only. The Rocky
+  rows' *Current kernel* NVRs are read from BaseOS repodata
+  (`primary.xml.gz`, highest `rel`). No AlmaLinux errata or OSV entry
   for this CVE yet, so AlmaLinux is not ahead of the bare VEX record.
 - **Amazon Linux**: no ALAS for CVE-2026-64564 in the AL2023
-  `updateinfo.xml.gz`. Current per-stream kernels from
-  `primary.xml.gz`: default `kernel` `6.1.180-225.360`, `kernel6.12`
-  `6.12.100-125.179`, `kernel6.18` `6.18.41-94.142` — all in-window and
-  below their branches' first-fixed releases.
+  `updateinfo.xml.gz`. The per-stream *Current kernel* values (default
+  `kernel`, `kernel6.12`, `kernel6.18`) are read from `primary.xml.gz`
+  — all in-window and below their branches' first-fixed releases.
 {{< /details >}}
 
 ## References
