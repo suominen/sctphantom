@@ -3,7 +3,7 @@ title: "SCTPhantom — SCTP ASCONF transport use-after-free"
 description: "Linux kernel SCTP ASCONF DEL-IP use-after-free (CVE-2026-64564, SCTPhantom) — remote-triggerable transport UAF, local privilege escalation and container-to-host escape — distro patch status tracker"
 layout: "single"
 date: 2026-08-10
-lastmod: 2026-08-19
+lastmod: 2026-08-20
 cover:
   image: "sctphantom-tracker.png"
   alt: "SCTPhantom — Linux kernel SCTP ASCONF transport use-after-free tracker"
@@ -21,7 +21,7 @@ cover:
 | Impact | Kernel heap UAF: a reproducible oops/panic (**DoS**), and per the discoverers a **local privilege escalation to root** and **container-to-host escape**. The chunk is processed in the receive/state-machine path, so it is reachable by any SCTP peer that completes an association with the ADD-IP (ASCONF) extension negotiated |
 | Upstream fix | [`9b2854f86f0b`][fix] (*sctp: don't free the ASCONF's own transport in DEL-IP processing*); first in **v7.2-rc5** |
 | Introduced | [`42e30bf3463c`][intro] in **v2.6.25** (2008) — the ASCONF DEL-IP handler has cached-and-reused the chunk's transport since SCTP ADD-IP support landed, so **essentially every SCTP-capable kernel is in-window** |
-| Affected window | **2.6.25 through 7.1** without the backport (and 7.2 before `-rc5`). Fixed in **v7.2-rc5** and the **6.6 / 6.12 / 6.18 / 7.1** stable backports; the **6.1, 5.15, and 5.10** LTS lines have **no fix yet** (per-branch *First fixed* below) |
+| Affected window | **2.6.25 through 7.1** without the backport (and 7.2 before `-rc5`). Fixed in **v7.2-rc5** and the **6.1 / 5.15 / 5.10 / 6.6 / 6.12 / 6.18 / 7.1** stable backports — every maintained upstream kernel line now carries the fix (per-branch *First fixed* below); distro kernels still need to adopt it independently |
 | Discoverer | Corvus AI (Tencent Zhuque Lab / TencentOS Security Team) |
 | Public disclosure | 2026-08-06 ([Tencent Matrix write-up][writeup]) |
 | Public PoC | None public. The researchers report internal PoCs demonstrating local privilege escalation and container-to-host escape |
@@ -118,13 +118,13 @@ is fixed.
 | Distribution | Release | Current kernel | First fixed | Fixed since | Status |
 |---|---|---|---|---|---|
 | Linux kernel | mainline | 7.2 | 7.2-rc5 | 2026-07-26 | :white_check_mark: Fixed — carries `9b2854f86f0b` |
-| Linux kernel | 7.1.x | 7.1.8 | 7.1.6 | 2026-08-03 | :white_check_mark: Fixed |
-| Linux kernel | 6.18.x | 6.18.44 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed — LTS |
-| Linux kernel | 6.12.x | 6.12.103 | 6.12.101 | 2026-08-03 | :white_check_mark: Fixed — LTS |
-| Linux kernel | 6.6.x | 6.6.151 | 6.6.148 | 2026-08-03 | :white_check_mark: Fixed — LTS |
-| Linux kernel | 6.1.x | 6.1.182 | — | — | :x: Vulnerable |
-| Linux kernel | 5.15.x | 5.15.215 | — | — | :x: Vulnerable |
-| Linux kernel | 5.10.x | 5.10.264 | — | — | :x: Vulnerable |
+| Linux kernel | 7.1.x | 7.1.9 | 7.1.6 | 2026-08-03 | :white_check_mark: Fixed |
+| Linux kernel | 6.18.x | 6.18.45 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed — LTS |
+| Linux kernel | 6.12.x | 6.12.104 | 6.12.101 | 2026-08-03 | :white_check_mark: Fixed — LTS |
+| Linux kernel | 6.6.x | 6.6.152 | 6.6.148 | 2026-08-03 | :white_check_mark: Fixed — LTS |
+| Linux kernel | 6.1.x | 6.1.183 | 6.1.183 | 2026-08-19 | :white_check_mark: Fixed — LTS |
+| Linux kernel | 5.15.x | 5.15.216 | 5.15.216 | 2026-08-19 | :white_check_mark: Fixed — LTS |
+| Linux kernel | 5.10.x | 5.10.265 | 5.10.265 | 2026-08-19 | :white_check_mark: Fixed — LTS |
 | Debian | sid (unstable) | 7.1.8-2 | 7.1.6-1 | 2026-08-04 | :white_check_mark: Fixed |
 | Debian | forky (testing) | 7.1.8-1 | 7.1.6-1 | 2026-08-08 | :white_check_mark: Fixed |
 | Debian | 13 (trixie) | 6.12.101-1 | 6.12.101-1 | 2026-08-06 | :white_check_mark: Fixed — DSA-6415-1 |
@@ -134,13 +134,13 @@ is fixed.
 | Debian | 11 (6.1 opt-in) | 6.1.180-1~deb11u1 | — | — | :x: Vulnerable |
 | Proxmox VE | 9 (default) | 7.0.14-12-pve | 7.0.14-10 | 2026-08-06 | :white_check_mark: Fixed — cherry-pick |
 | Proxmox VE | 8 (default) | 6.8.12-42-pve | 6.8.12-41 | 2026-08-07 | :white_check_mark: Fixed — cherry-pick |
-| NixOS | master | 6.18.44 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
-| NixOS | release-26.05 | 6.18.44 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
+| NixOS | master | 6.18.45 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
+| NixOS | release-26.05 | 6.18.45 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
 | NixOS | Unstable | 6.18.44 | 6.18.42 | 2026-08-04 | :white_check_mark: Fixed |
-| NixOS | Unstable (small) | 6.18.44 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
+| NixOS | Unstable (small) | 6.18.45 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
 | NixOS | Unstable (nixpkgs) | 6.18.44 | 6.18.42 | 2026-08-08 | :white_check_mark: Fixed |
 | NixOS | 26.05 | 6.18.44 | 6.18.42 | 2026-08-05 | :white_check_mark: Fixed |
-| NixOS | 26.05 (small) | 6.18.44 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
+| NixOS | 26.05 (small) | 6.18.45 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
 | Rocky Linux / RHEL | 10 | 6.12.0-211.47.1.el10_2 | — | — | :x: Vulnerable — no RHSA yet |
 | Rocky Linux / RHEL | 9 | 5.14.0-687.39.1.el9_8 | — | — | :x: Vulnerable — no RHSA yet |
 | Rocky Linux / RHEL | 8 | 4.18.0-553.156.1.el8_10 | — | — | :x: Vulnerable — no RHSA yet |
@@ -158,11 +158,12 @@ CNA backported it across the maintained stable lines on **2026-08-03**:
 subject, confirmed present on its `linux-*.y` branch, with `finger_banner`
 current point releases at or above them.
 
-The **6.1, 5.15, and 5.10** long-term lines are the exposure. The fix is
-**not** present on `linux-6.1.y`, `linux-5.15.y`, or `linux-5.10.y`, and
-because the bug dates to 2.6.25 all three are fully in-window: a host on
-6.1.182, 5.15.215, or 5.10.264 is vulnerable and stays so until its branch
-picks up the backport, most likely in a later stable release batch.
+The **6.1, 5.15, and 5.10** long-term lines picked up the backport later,
+on **2026-08-19**: **6.1.183** (`2b324ba3494a`), **5.15.216**
+(`a63afa1f9b12`), and **5.10.265** (`a9ce31be4cb1`) are each that branch's
+first-fixed release — confirmed present on its `linux-*.y` branch, with
+`finger_banner` current point releases at or above them. Every maintained
+upstream kernel line now carries the fix.
 
 ### Debian
 
@@ -218,9 +219,12 @@ updates land on nixpkgs `master` first, and each channel publishes them
 once its Hydra jobset passes. A channel can therefore sit a few days behind
 `master`, and an unstable channel is not necessarily ahead of a release
 channel. The `-small` channels (`nixos-unstable-small`, `nixos-26.05-small`)
-are gated on a reduced jobset and pick up kernel updates fastest. A host
-that overrides the default to an unpatched series (`linux_6_1` /
-`linux_5_15` / `linux_5_10`) is still vulnerable.
+are gated on a reduced jobset and pick up kernel updates fastest. Every
+upstream-maintained series now carries the fix, and nixpkgs currently pins
+`linux_6_1` / `linux_5_15` / `linux_5_10` at or above their first-fixed
+releases too, so a host overriding the default to one of them is fixed as
+well, as long as it tracks a ref current enough to have picked up that
+bump.
 
 The `master` and `release-26.05` rows are the git branches the fix lands
 on. They are not Hydra-gated, so they carry a kernel bump from the moment
@@ -406,9 +410,9 @@ path open.
   `CAP_NET_ADMIN` and authenticates its own ASCONF, so only blocking the
   `sctp` module or patching closes this path.
 - **No "too old to be affected":** the flaw dates to 2.6.25, so old LTS
-  kernels are *not* safe by age. The 6.1, 5.15, and 5.10 lines are
-  currently **unpatched** and vulnerable; check the *First fixed* column,
-  not the kernel's age.
+  kernels are *not* safe by age. Every maintained upstream line now
+  carries the fix, but distro kernels adopt it independently — check the
+  *First fixed* column for the distro in question, not the kernel's age.
 - **`sctp` often not loaded:** on hosts that never use SCTP the module is
   absent, and blocking its autoload removes reachability entirely — the
   cheapest durable mitigation short of the patch.
@@ -434,18 +438,21 @@ readers never need it.
 - **CVE-2026-64564** assigned by the kernel CNA (confirmed via `vulns.git`
   `origin/master`, `cve/published/2026/CVE-2026-64564.{json,dyad,cvss}`;
   record keys on `9b2854f86f0b56e9027d68e7a3fc909d1a9b566f`). The `.dyad`'s
-  vulnerable:fixed pairs are `2.6.25 → 6.6.148 / 6.12.101 / 6.18.42 /
-  7.1.6 / 7.2-rc5`.
+  vulnerable:fixed pairs are `2.6.25 → 5.10.265 / 5.15.216 / 6.1.183 /
+  6.6.148 / 6.12.101 / 6.18.42 / 7.1.6 / 7.2-rc5`.
 - **Stable backports** (fix cherry-picks confirmed by subject grep against
   `~/src/linux/stable`, each a new SHA): 6.6.148 (`fedeb4468987`), 6.12.101
   (`74e8f3e7114f`), 6.18.42 (`85aca407c560`), 7.1.6 (`d136b29bf91d`) — all
   tagged **2026-08-03** (commit dates 11:15–11:26 +0200). `finger_banner`
-  current point releases (7.1.8, 6.18.44, 6.12.103, 6.6.151) are at or
+  current point releases (7.1.9, 6.18.45, 6.12.104, 6.6.152) are at or
   above them.
-- **Unpatched in-window lines** confirmed by the *absence* of the fixing
-  subject on `origin/linux-6.1.y`, `origin/linux-5.15.y`, and
-  `origin/linux-5.10.y` (current 6.1.182 / 5.15.215 / 5.10.264). No
-  not-affected lines exist — the intro predates every maintained branch.
+- **6.1.y / 5.15.y / 5.10.y backports** (fix cherry-picks confirmed by
+  subject grep against `~/src/linux/stable`, each a new SHA, and by the
+  `.dyad`): 6.1.183 (`2b324ba3494a`), 5.15.216 (`a63afa1f9b12`), 5.10.265
+  (`a9ce31be4cb1`) — all tagged **2026-08-19** (commit dates 17:12–17:16
+  +0200), each its branch's first-fixed release. No not-affected lines
+  exist — the intro predates every maintained branch, and every branch now
+  carries the fix.
 
 #### Scoring
 
@@ -513,11 +520,13 @@ readers never need it.
 - **NixOS** (`~/src/nixos/nixpkgs`): `linux_default = packages.linux_6_18`;
   every tracked ref resolves `6.18` at or above the `6.18.42` first-fixed
   release, so all seven rows are fixed. *Current kernel* from each ref's
-  `kernels-org.json` — `master` / `release-26.05`, `nixos-unstable-small`
-  / `nixos-26.05-small`, `nixpkgs-unstable`, and `nixos-unstable` at
-  `6.18.44` (branch tips for the first two; channel `git-revision` pins
-  for the rest), `nixos-26.05` at `6.18.44` (channel `git-revision`
-  pin).
+  `kernels-org.json`: `master`, `release-26.05`, `nixos-unstable-small`,
+  and `nixos-26.05-small` at `6.18.45`; `nixos-unstable`, `nixpkgs-unstable`,
+  and `nixos-26.05` at `6.18.44` (branch tips for `master` /
+  `release-26.05`, channel `git-revision` pins for the other five). At the
+  same refs, `linux_6_1` / `linux_5_15` / `linux_5_10` resolve to `6.1.183`
+  / `5.15.216` / `5.10.265` — each at or above its branch's first-fixed
+  release.
   *Fixed since*: the branch rows use the commit date of the 6.18.42 bump
   (`b658e06342e8` on master, `33565191d37a` on release-26.05, both
   2026-08-03); the channel rows use `scripts/nixos-first-shipped`
@@ -556,6 +565,9 @@ readers never need it.
 | Stable 6.12.101 | <https://git.kernel.org/stable/c/74e8f3e7114f0e26d1b2c4c048044db9fcc27603> |
 | Stable 6.18.42 | <https://git.kernel.org/stable/c/85aca407c560aba81b5ce9d3d6cf94c74077d19b> |
 | Stable 7.1.6 | <https://git.kernel.org/stable/c/d136b29bf91dd8e3161281b87de597b7311d9462> |
+| Stable 6.1.183 | <https://git.kernel.org/stable/c/2b324ba3494ae958cba16a453e3e71489b4de7fc> |
+| Stable 5.15.216 | <https://git.kernel.org/stable/c/a63afa1f9b12d5293cbe0b77fd45dc0632533a13> |
+| Stable 5.10.265 | <https://git.kernel.org/stable/c/a9ce31be4cb1a5dd82b3e0a1d0c3e7cbdcd31293> |
 | CVE-2026-64564 | <https://www.cve.org/CVERecord?id=CVE-2026-64564> |
 | Debian security tracker | <https://security-tracker.debian.org/tracker/CVE-2026-64564> |
 | Red Hat security data | <https://access.redhat.com/security/cve/CVE-2026-64564> |
