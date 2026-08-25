@@ -3,7 +3,7 @@ title: "SCTPhantom — SCTP ASCONF transport use-after-free"
 description: "Linux kernel SCTP ASCONF DEL-IP use-after-free (CVE-2026-64564, SCTPhantom) — remote-triggerable transport UAF, local privilege escalation and container-to-host escape — distro patch status tracker"
 layout: "single"
 date: 2026-08-10
-lastmod: 2026-08-24
+lastmod: 2026-08-25
 cover:
   image: "sctphantom-tracker.png"
   alt: "SCTPhantom — Linux kernel SCTP ASCONF transport use-after-free tracker"
@@ -125,22 +125,22 @@ is fixed.
 | Linux kernel | 6.1.x | 6.1.184 | 6.1.183 | 2026-08-19 | :white_check_mark: Fixed — LTS |
 | Linux kernel | 5.15.x | 5.15.217 | 5.15.216 | 2026-08-19 | :white_check_mark: Fixed — LTS |
 | Linux kernel | 5.10.x | 5.10.266 | 5.10.265 | 2026-08-19 | :white_check_mark: Fixed — LTS |
-| Debian | sid (unstable) | 7.1.9-1 | 7.1.6-1 | 2026-08-04 | :white_check_mark: Fixed |
+| Debian | sid (unstable) | 7.1.10-1 | 7.1.6-1 | 2026-08-04 | :white_check_mark: Fixed |
 | Debian | forky (testing) | 7.1.8-2 | 7.1.6-1 | 2026-08-08 | :white_check_mark: Fixed |
 | Debian | 13 (trixie) | 6.12.101-1 | 6.12.101-1 | 2026-08-06 | :white_check_mark: Fixed — DSA-6415-1 |
 | Debian | 12 (bookworm) | 6.1.180-1 | — | — | :x: Vulnerable |
 | Debian | 12 (6.12 opt-in) | 6.12.101-1~deb12u1 | 6.12.101-1~deb12u1 | 2026-08-15 | :white_check_mark: Fixed |
 | Debian | 11 (bullseye, LTS) | 5.10.262-1 | — | — | :x: Vulnerable |
 | Debian | 11 (6.1 opt-in) | 6.1.180-1~deb11u1 | — | — | :x: Vulnerable |
-| Proxmox VE | 9 (default) | 7.0.14-12-pve | 7.0.14-10 | 2026-08-06 | :white_check_mark: Fixed — cherry-pick |
+| Proxmox VE | 9 (default) | 7.0.14-14-pve | 7.0.14-10 | 2026-08-06 | :white_check_mark: Fixed — cherry-pick |
 | Proxmox VE | 8 (default) | 6.8.12-43-pve | 6.8.12-41 | 2026-08-07 | :white_check_mark: Fixed — cherry-pick |
 | NixOS | master | 6.18.46 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
 | NixOS | release-26.05 | 6.18.46 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
 | NixOS | Unstable | 6.18.45 | 6.18.42 | 2026-08-04 | :white_check_mark: Fixed |
-| NixOS | Unstable (small) | 6.18.45 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
+| NixOS | Unstable (small) | 6.18.46 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
 | NixOS | Unstable (nixpkgs) | 6.18.45 | 6.18.42 | 2026-08-08 | :white_check_mark: Fixed |
-| NixOS | 26.05 | 6.18.45 | 6.18.42 | 2026-08-05 | :white_check_mark: Fixed |
-| NixOS | 26.05 (small) | 6.18.45 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
+| NixOS | 26.05 | 6.18.46 | 6.18.42 | 2026-08-05 | :white_check_mark: Fixed |
+| NixOS | 26.05 (small) | 6.18.46 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
 | Rocky Linux / RHEL | 10 | 6.12.0-211.49.1.el10_2 | — | — | :x: Vulnerable — no RHSA yet |
 | Rocky Linux / RHEL | 9 | 5.14.0-687.41.1.el9_8 | — | — | :x: Vulnerable — no RHSA yet |
 | Rocky Linux / RHEL | 8 | 4.18.0-553.157.1.el8_10 | — | — | :x: Vulnerable — no RHSA yet |
