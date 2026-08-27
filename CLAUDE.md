@@ -304,8 +304,10 @@ Each run:
   and Ubuntu for the Proxmox rows.
 
 `zcat` / `gunzip` **are** in the headless allowlist — use them for the
-`Packages.gz` / repodata pulls.  Pull only kernel versions and advisory
-state — the tracker records no other per-distro facts.
+`Packages.gz` / repodata pulls — as are `grep`, `sort`, `jq` and `tee`
+(`tee` because a `>` redirection into the worktree is refused).  Pull
+only kernel versions and advisory state — the tracker records no other
+per-distro facts.
 
 **Live versions appear only in the *Patch status* table.**  Never repeat
 a row's *Current kernel* value (or any other value the routine run

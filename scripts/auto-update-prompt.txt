@@ -52,11 +52,17 @@ Working-tree hygiene: stream a fetch through a pipe — `curl -fsSL <url> |
 grep …` — when one pass over the data is enough. If you genuinely need a
 scratch file, save it in the worktree under a `.scratch-` prefix (e.g.
 `.scratch-advisories.json`), work on it there, and `rm` it before you
-commit — never `git add` a scratch file. Don't use /tmp: Bash file reads
-are confined to the worktree, so a file there can be written but not read
-back. The wrapper's `git clean -fd` sweeps forgotten scratch on the next
-run, but the only thing you should leave behind is the edited tracker
-(and its commit).
+commit — never `git add` a scratch file. Write it with `curl -o
+.scratch-…` or `… | tee .scratch-… > /dev/null`: a shell redirection into
+a file (`> .scratch-…`) is refused by Claude Code even inside the
+worktree, and retrying it in another spelling is wasted effort
+(`/dev/null` is the one redirection target that passes). Read it back
+with an allowlisted reader (`zcat .scratch-x.gz | grep …`,
+`jq … .scratch-x.json`).
+Don't use /tmp: Bash file reads are confined to the worktree, so a file
+there can be written but not read back. The wrapper's `git clean -fd`
+sweeps forgotten scratch on the next run, but the only thing you should
+leave behind is the edited tracker (and its commit).
 
 1. Read CLAUDE.md to learn the project conventions (especially the
    single-axis kernel verdict, that every SCTP-capable kernel is in-window
@@ -181,8 +187,11 @@ run, but the only thing you should leave behind is the edited tracker
    else.
 
    zcat / gunzip ARE available to the headless run — use them for the
-   Packages.gz / repodata pulls. Pull only kernel versions and advisory
-   state — the tracker records no other per-distro facts.
+   Packages.gz / repodata pulls — as are grep, sort, jq and tee;
+   python3, awk, sed and cat are not allowlisted — if one of those is
+   refused, don't retry it in another spelling. Pull only kernel
+   versions and advisory state — the tracker records no other
+   per-distro facts.
 
    The reachability gate (sctp module in use, ADD-IP/ASCONF negotiated,
    AUTH required) is NOT a verdict axis — it is prose about who can reach

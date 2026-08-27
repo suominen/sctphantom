@@ -170,8 +170,9 @@ then
 fi
 
 # Headless run. Permission scope (Read/Edit the tracker, WebFetch and
-# curl the sources, the read-only lookup helpers in scripts/, git +
-# date for the commit step) goes in --settings JSON because
+# curl the sources, grep/sort/jq to sift them, tee and rm for scratch
+# files, the read-only lookup helpers in scripts/, git + date for the
+# commit step) goes in --settings JSON because
 # --allowed-tools on the CLI silently ignores Bash patterns.
 # `default` mode under -p with no TTY refuses anything outside the
 # allowlist without prompting.
@@ -192,13 +193,38 @@ fi
 # anything else outside the worktree. The git clean above sweeps
 # any scratch files a run forgets.
 #
+# Writing a scratch file takes curl -o or tee: Claude Code refuses
+# every `> file` redirection into the worktree -- the refusal names
+# the worktree as the one allowed directory and blocks anyway (a
+# Claude Code bug, seen on 2.1.241 through 2.1.247). tee is
+# allowlisted for that. Unlike rm and the file readers (grep, sort,
+# jq, cat, head -- all probe-verified to refuse a path outside the
+# worktree even under an explicit rule), tee's target is not
+# confined: it wrote outside the cwd. So, like `curl -o`, it can
+# write anywhere this user can -- the worktree's own
+# .claude/settings.json included, with self-composed content --
+# and rests on the unit sandbox (ProtectHome=read-only plus
+# ReadWritePaths), not on the permission system. A manual run with
+# a WORKTREE argument has no unit sandbox under it, so there tee
+# and curl -o are unbounded. `sort -o FILE` is a write path on the
+# same footing.
+#
 # The deny rules keep the agent from rewriting its own executable
 # surface mid-run; the guard above only sees the tree as it stood at
 # the start. Only Edit(...) rules apply to file writes -- a Write(...)
 # rule is ignored (Claude Code warns when one is present).
 #
 # The verification recipes live in scripts/ rather than as inline
-# pipelines, which keeps awk and sed out of the allowlist too.
+# pipelines, which keeps awk and sed out of the allowlist too. grep
+# and sort are allowlisted even though Claude Code auto-classifies
+# both as read-only: the classifier gives up on an argument holding
+# a `$`, a `\{n\}` interval, or an embedded quote -- `grep '^Package:
+# x$'`, `sort -t'"' -k4 -V`, exactly the shapes the recipes use --
+# and refuses the whole pipeline; an explicit rule overrides it
+# (probe-verified on 2.1.247). jq is a read-only filter the wrapper
+# already depends on; without it the agent burns retries on python3
+# and awk against the JSON feeds. All three keep Claude Code's
+# read confinement to the worktree under the explicit rule.
 #
 # Those helpers are the one thing the agent both runs and could write,
 # so they are invoked from CODE, never from the worktree. An Edit deny
@@ -217,13 +243,12 @@ kernel)
   # git describe maps a fix commit to the release that carries it --
   # kernel-side lookups package mode does not need.
   #
-  # The pve-kernel branch-listing rules cover the one read the
-  # classifier refuses: `git branch -r` behind `git -C` is not
-  # auto-classified read-only-safe (Claude Code 2.1.236 tightened the
-  # classifier), unlike the `git -C ... log/show/grep` reads, and a
-  # bare `Bash(git branch:*)` rule never matches the `git -C` form --
-  # matching is a literal prefix on the command the agent types. The
-  # `-r` stays in the rule so mutating `git branch` forms remain
+  # The pve-kernel branch-listing rules cover the one `git -C` read
+  # the project settings have no rule for: nothing behind `git -C` is
+  # auto-classified read-only (see the settings assembly below), and
+  # a bare `Bash(git branch:*)` rule never matches the `git -C` form
+  # -- matching is a literal prefix on the command the agent types.
+  # The `-r` stays in the rule so mutating `git branch` forms remain
   # refused, and the two home-directory spellings cover the phrasings
   # the recipes use; any other spelling fails closed. A heredoc, not
   # a single-quoted literal, so ${HOME} expands in the second rule.
@@ -254,7 +279,28 @@ EOF
   ;;
 esac
 
-settings="$(jq -c . << EOF
+# Claude Code matches a Bash rule as a literal prefix of the command
+# the agent types, and never auto-approves `git -C <dir> ...` as
+# read-only in any spelling (probe-verified on 2.1.247), so the
+# project settings' `git -C ~/src/...` rules cover only the tilde
+# spelling. The agent writes the absolute path about half the time
+# and was then refused every clone read in a run -- the pve-kernel
+# `branch -r` pair above spells both by hand for the same reason.
+# Emit every such rule in both spellings, read from CODE's settings
+# (reviewed code), never from the worktree copy the agent can
+# rewrite. Carrying the tilde spelling here too keeps the run from
+# depending on the worktree having been trusted interactively:
+# Claude Code ignores an untrusted workspace's project settings
+# (with a warning), but applies --settings regardless. A settings
+# file without permissions.allow fails the run here, on purpose --
+# better than a session in which every clone read is refused.
+settings="$(jq -c --arg home "${HOME}" \
+    --slurpfile proj "${CODE}/.claude/settings.json" '
+  .permissions.allow += [
+    $proj[0].permissions.allow[]
+    | select(startswith("Bash(git -C ~/"))
+    | ., sub("~/"; $home + "/")
+  ]' << EOF
   {
     "permissions": {
       "allow": [
@@ -264,6 +310,10 @@ settings="$(jq -c . << EOF
 	"Bash(date:*)",
 	"Bash(rm:*)",
 	"Bash(curl:*)",
+	"Bash(grep:*)",
+	"Bash(sort:*)",
+	"Bash(jq:*)",
+	"Bash(tee:*)",
 	"Bash(${HELPERS}/nixos-first-shipped:*)",
 	"Bash(git add:*)",
 	"Bash(git commit:*)",

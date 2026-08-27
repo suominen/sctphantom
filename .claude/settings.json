@@ -35,6 +35,7 @@
       "Bash(git -C ~/src/nixos/nixpkgs diff *)",
       "Bash(git -C ~/src/nixos/nixpkgs diff)",
       "Bash(git -C ~/src/nixos/nixpkgs log *)",
+      "Bash(git -C ~/src/nixos/nixpkgs rev-parse *)",
       "Bash(git -C ~/src/nixos/nixpkgs show *)",
       "Bash(git -C ~/src/nixos/nixpkgs status *)",
       "Bash(git -C ~/src/nixos/nixpkgs status)",
