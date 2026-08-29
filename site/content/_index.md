@@ -3,7 +3,7 @@ title: "SCTPhantom — SCTP ASCONF transport use-after-free"
 description: "Linux kernel SCTP ASCONF DEL-IP use-after-free (CVE-2026-64564, SCTPhantom) — remote-triggerable transport UAF, local privilege escalation and container-to-host escape — distro patch status tracker"
 layout: "single"
 date: 2026-08-10
-lastmod: 2026-08-28
+lastmod: 2026-08-29
 cover:
   image: "sctphantom-tracker.png"
   alt: "SCTPhantom — Linux kernel SCTP ASCONF transport use-after-free tracker"
@@ -126,7 +126,7 @@ is fixed.
 | Linux kernel | 6.1.x | 6.1.186 | 6.1.183 | 2026-08-19 | :white_check_mark: Fixed — LTS |
 | Linux kernel | 5.15.x | 5.15.219 | 5.15.216 | 2026-08-19 | :white_check_mark: Fixed — LTS |
 | Linux kernel | 5.10.x | 5.10.268 | 5.10.265 | 2026-08-19 | :white_check_mark: Fixed — LTS |
-| Debian | sid (unstable) | 7.1.10-1 | 7.1.6-1 | 2026-08-04 | :white_check_mark: Fixed |
+| Debian | sid (unstable) | 7.1.12-1 | 7.1.6-1 | 2026-08-04 | :white_check_mark: Fixed |
 | Debian | forky (testing) | 7.1.8-2 | 7.1.6-1 | 2026-08-08 | :white_check_mark: Fixed |
 | Debian | 13 (trixie) | 6.12.105-1 | 6.12.101-1 | 2026-08-06 | :white_check_mark: Fixed — DSA-6415-1 |
 | Debian | 12 (bookworm) | 6.1.180-1 | — | — | :x: Vulnerable |
