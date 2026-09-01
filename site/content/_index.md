@@ -3,7 +3,7 @@ title: "SCTPhantom — SCTP ASCONF transport use-after-free"
 description: "Linux kernel SCTP ASCONF DEL-IP use-after-free (CVE-2026-64564, SCTPhantom) — remote-triggerable transport UAF, local privilege escalation and container-to-host escape — distro patch status tracker"
 layout: "single"
 date: 2026-08-10
-lastmod: 2026-08-31
+lastmod: 2026-09-01
 cover:
   image: "sctphantom-tracker.png"
   alt: "SCTPhantom — Linux kernel SCTP ASCONF transport use-after-free tracker"
@@ -145,9 +145,9 @@ is fixed.
 | Rocky Linux / RHEL | 10 | 6.12.0-211.49.1.el10_2 | — | — | :x: Vulnerable — no RHSA yet |
 | Rocky Linux / RHEL | 9 | 5.14.0-687.42.1.el9_8 | — | — | :x: Vulnerable — no RHSA yet |
 | Rocky Linux / RHEL | 8 | 4.18.0-553.158.1.el8_10 | — | — | :x: Vulnerable — no RHSA yet |
-| Amazon Linux | 2023 (default) | 6.1.180-225.360 | — | — | :x: Vulnerable — no ALAS yet |
-| Amazon Linux | 2023 (6.12 opt-in) | 6.12.100-125.179 | — | — | :x: Vulnerable — no ALAS yet, below 6.12.101 fix |
-| Amazon Linux | 2023 (6.18 opt-in) | 6.18.41-94.142 | — | — | :x: Vulnerable — no ALAS yet |
+| Amazon Linux | 2023 (default) | 6.1.182-227.379 | — | — | :x: Vulnerable — no ALAS yet |
+| Amazon Linux | 2023 (6.12 opt-in) | 6.12.103-127.188 | 6.12.103-127.188 | 2026-08-31 | :white_check_mark: Fixed — ALAS2023-2026-2110 |
+| Amazon Linux | 2023 (6.18 opt-in) | 6.18.44-99.149 | — | — | :x: Vulnerable — no ALAS yet |
 {.distros}
 
 ### Linux kernel
@@ -271,12 +271,16 @@ CloudLinux track the RHEL determination.
 
 ### Amazon Linux
 
-No ALAS has been issued for this CVE, so every AL2023 kernel stream — the
-default `kernel` (the 6.1 line) and the `kernel6.12` and `kernel6.18`
-opt-ins — remains **vulnerable** pending an Amazon cherry-pick. All
-three streams sit below their branches' first-fixed releases (`6.1.183`
-/ `6.12.101` / `6.18.42`); each turns fixed when Amazon ships a
-cherry-pick or the stream crosses its branch's first fix.
+Amazon has fixed one of the three AL2023 kernel streams. The
+`kernel6.12` opt-in shipped **ALAS2023-2026-2110** (2026-08-31), rebasing
+onto upstream **6.12.103** — past the 6.12 branch's `6.12.101` first fix
+— so it is **fixed**. The default `kernel` (6.1 line) and the
+`kernel6.18` opt-in remain **vulnerable**: no ALAS names this CVE for
+either stream yet. The default stream's `6.1.182` build is still below
+its branch's `6.1.183` first fix, but the `kernel6.18` stream's `6.18.44`
+build has already crossed the 6.18 branch's `6.18.42` first fix without
+an ALAS confirming adoption — a version compare alone doesn't establish
+the fix landed, so the row stays vulnerable pending that advisory.
 
 ## Detection
 
@@ -558,10 +562,15 @@ readers never need it.
   rows' *Current kernel* NVRs are read from BaseOS repodata
   (`primary.xml.gz`, highest `rel`). No AlmaLinux errata or OSV entry
   for this CVE yet, so AlmaLinux is not ahead of the bare VEX record.
-- **Amazon Linux**: no ALAS for CVE-2026-64564 in the AL2023
-  `updateinfo.xml.gz`. The per-stream *Current kernel* values (default
-  `kernel`, `kernel6.12`, `kernel6.18`) are read from `primary.xml.gz`
-  — all in-window and below their branches' first-fixed releases.
+- **Amazon Linux**: the AL2023 `updateinfo.xml.gz` carries exactly one
+  reference to CVE-2026-64564, in **ALAS2023-2026-2110** (issued
+  2026-08-31), whose `pkglist` fixes `kernel6.12` at `6.12.103-127.188`.
+  No ALAS references this CVE for the default `kernel` or `kernel6.18`
+  streams. The per-stream *Current kernel* values are read from
+  `primary.xml.gz`: default `kernel` at `6.1.182-227.379` (below its
+  branch's `6.1.183` first fix); `kernel6.18` at `6.18.44-99.149` (above
+  its branch's `6.18.42` first fix, but with no ALAS naming this CVE for
+  the stream, so not counted as adopted).
 {{< /details >}}
 
 ## References
