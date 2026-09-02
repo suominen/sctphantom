@@ -3,7 +3,7 @@ title: "SCTPhantom — SCTP ASCONF transport use-after-free"
 description: "Linux kernel SCTP ASCONF DEL-IP use-after-free (CVE-2026-64564, SCTPhantom) — remote-triggerable transport UAF, local privilege escalation and container-to-host escape — distro patch status tracker"
 layout: "single"
 date: 2026-08-10
-lastmod: 2026-09-01
+lastmod: 2026-09-02
 cover:
   image: "sctphantom-tracker.png"
   alt: "SCTPhantom — Linux kernel SCTP ASCONF transport use-after-free tracker"
@@ -118,31 +118,29 @@ is fixed.
 | Distribution | Release | Current kernel | First fixed | Fixed since | Status |
 |---|---|---|---|---|---|
 | Linux kernel | mainline | 7.3-rc1 | 7.2-rc5 | 2026-07-26 | :white_check_mark: Fixed — carries `9b2854f86f0b` |
-| Linux kernel | 7.2.x | 7.2.2 | 7.2 | 2026-08-16 | :white_check_mark: Fixed |
-| Linux kernel | 7.1.x | 7.1.12 | 7.1.6 | 2026-08-03 | :white_check_mark: Fixed |
-| Linux kernel | 6.18.x | 6.18.48 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed — LTS |
-| Linux kernel | 6.12.x | 6.12.107 | 6.12.101 | 2026-08-03 | :white_check_mark: Fixed — LTS |
-| Linux kernel | 6.6.x | 6.6.155 | 6.6.148 | 2026-08-03 | :white_check_mark: Fixed — LTS |
-| Linux kernel | 6.1.x | 6.1.186 | 6.1.183 | 2026-08-19 | :white_check_mark: Fixed — LTS |
-| Linux kernel | 5.15.x | 5.15.219 | 5.15.216 | 2026-08-19 | :white_check_mark: Fixed — LTS |
-| Linux kernel | 5.10.x | 5.10.268 | 5.10.265 | 2026-08-19 | :white_check_mark: Fixed — LTS |
+| Linux kernel | 7.2.x | 7.2.3 | 7.2 | 2026-08-16 | :white_check_mark: Fixed |
+| Linux kernel | 7.1.x | 7.1.13 | 7.1.6 | 2026-08-03 | :white_check_mark: Fixed — EOL |
+| Linux kernel | 6.18.x | 6.18.49 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed — LTS |
+| Linux kernel | 6.12.x | 6.12.108 | 6.12.101 | 2026-08-03 | :white_check_mark: Fixed — LTS |
+| Linux kernel | 6.6.x | 6.6.156 | 6.6.148 | 2026-08-03 | :white_check_mark: Fixed — LTS |
+| Linux kernel | 6.1.x | 6.1.187 | 6.1.183 | 2026-08-19 | :white_check_mark: Fixed — LTS |
+| Linux kernel | 5.15.x | 5.15.220 | 5.15.216 | 2026-08-19 | :white_check_mark: Fixed — LTS |
+| Linux kernel | 5.10.x | 5.10.269 | 5.10.265 | 2026-08-19 | :white_check_mark: Fixed — LTS |
 | Debian | sid (unstable) | 7.1.12-1 | 7.1.6-1 | 2026-08-04 | :white_check_mark: Fixed |
 | Debian | forky (testing) | 7.1.8-2 | 7.1.6-1 | 2026-08-08 | :white_check_mark: Fixed |
 | Debian | 13 (trixie) | 6.12.107-1 | 6.12.101-1 | 2026-08-06 | :white_check_mark: Fixed — DSA-6415-1 |
 | Debian | 12 (bookworm) | 6.1.180-1 | — | — | :x: Vulnerable |
 | Debian | 12 (6.12 opt-in) | 6.12.101-1~deb12u1 | 6.12.101-1~deb12u1 | 2026-08-15 | :white_check_mark: Fixed |
-| Debian | 11 (bullseye, LTS) | 5.10.262-1 | — | — | :x: Vulnerable |
-| Debian | 11 (6.1 opt-in) | 6.1.180-1~deb11u1 | — | — | :x: Vulnerable |
 | Proxmox VE | 9 (default) | 7.0.14-14-pve | 7.0.14-10 | 2026-08-06 | :white_check_mark: Fixed — cherry-pick |
 | Proxmox VE | 8 (default) | 6.8.12-43-pve | 6.8.12-41 | 2026-08-07 | :white_check_mark: Fixed — cherry-pick |
 | NixOS | master | 6.18.48 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
-| NixOS | release-26.05 | 6.18.48 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
+| NixOS | release-26.05 | 6.18.49 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
 | NixOS | Unstable | 6.18.48 | 6.18.42 | 2026-08-04 | :white_check_mark: Fixed |
 | NixOS | Unstable (small) | 6.18.48 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
 | NixOS | Unstable (nixpkgs) | 6.18.48 | 6.18.42 | 2026-08-08 | :white_check_mark: Fixed |
 | NixOS | 26.05 | 6.18.48 | 6.18.42 | 2026-08-05 | :white_check_mark: Fixed |
 | NixOS | 26.05 (small) | 6.18.48 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
-| Rocky Linux / RHEL | 10 | 6.12.0-211.49.1.el10_2 | — | — | :x: Vulnerable — no RHSA yet |
+| Rocky Linux / RHEL | 10 | 6.12.0-211.50.1.el10_2 | — | — | :x: Vulnerable — no RHSA yet |
 | Rocky Linux / RHEL | 9 | 5.14.0-687.42.1.el9_8 | — | — | :x: Vulnerable — no RHSA yet |
 | Rocky Linux / RHEL | 8 | 4.18.0-553.158.1.el8_10 | — | — | :x: Vulnerable — no RHSA yet |
 | Amazon Linux | 2023 (default) | 6.1.182-227.379 | — | — | :x: Vulnerable — no ALAS yet |
@@ -171,6 +169,12 @@ upstream kernel line now carries the fix.
 already landed by `v7.2-rc5`, the GA release carries it too, so the new
 **7.2.x** row is fixed from its first release.
 
+**7.1.x reached end of life at `7.1.13`**, per `kernel.org`'s
+`finger_banner` (superseded once `v7.2` became the newer of the two
+maintained non-LTS stable branches). It carries the fix since `7.1.6`,
+so the row's verdict is unaffected — its *Current kernel* simply stops
+moving.
+
 ### Debian
 
 Debian's status splits on which upstream branch each suite tracks.
@@ -179,19 +183,25 @@ line: sid has been **fixed** since the `7.1.6-1` upload (upstream 7.1.6
 is the branch's first-fixed release), and forky since that same version
 migrated to testing on 2026-08-08. **trixie** (Debian 13) shipped the
 fix as `6.12.101-1` — exactly the 6.12 branch's first-fixed release —
-so it is **fixed** too. **bookworm** rides the 6.1 line and
-**bullseye** the 5.10 line; both lines now carry an upstream fix
-(6.1.183 / 5.10.265, 2026-08-19), but neither suite has shipped a
-kernel with the backport, so both are **vulnerable**, as the Debian
-security tracker records. They follow once Debian rebases onto the
-fixed point releases or cherry-picks the fix.
+so it is **fixed** too. **bookworm** rides the 6.1 line, which now
+carries an upstream fix (6.1.183, 2026-08-19), but the suite has not
+shipped a kernel with the backport, so it is **vulnerable**, as the
+Debian security tracker records. It follows once Debian rebases onto a
+fixed point release or cherry-picks the fix.
 
-Both older suites also offer an **opt-in newer kernel**. bookworm's
-`linux-6.12` (bookworm-security) reached `6.12.101-1~deb12u1` on
-2026-08-15 — exactly the 6.12 branch's first-fixed release — so it is
-**fixed**, independently of the still-vulnerable bookworm default.
-bullseye's `linux-6.1` (bullseye-security) rebuilds the 6.1 line but has
-not reached its `6.1.183` first fix, so it stays **vulnerable**.
+bookworm also offers an **opt-in newer kernel**: `linux-6.12`
+(bookworm-security) reached `6.12.101-1~deb12u1` on 2026-08-15 —
+exactly the 6.12 branch's first-fixed release — so it is **fixed**,
+independently of the still-vulnerable bookworm default.
+
+**bullseye (Debian 11) reached the end of its LTS support window on
+2026-08-31** without ever receiving the fix — the Debian security
+tracker no longer carries an entry for it against this CVE, and its
+`linux-6.1` opt-in backport package has been withdrawn entirely. Both
+its 5.10-line default kernel and the former 6.1-line opt-in are
+permanently **vulnerable**: no further update is coming through the
+standard LTS. A host still on bullseye should upgrade to bookworm or
+newer.
 
 SCTP itself is not built into Debian's kernel image but shipped as the
 `sctp` module, autoloaded on first use of an `AF_INET`/`IPPROTO_SCTP`
@@ -467,6 +477,9 @@ readers never need it.
   `v7.2-rc5`), so the new `linux-7.2.y` branch is fixed from its first
   release; `finger_banner`'s current 7.2 point release is read for the
   row's *Current kernel*.
+- **7.1.y reached end of life** at `7.1.13`, per `kernel.org`'s
+  `finger_banner` (which marks it `(EOL)`); already fixed since `7.1.6`,
+  so the row's *Current kernel* is now final.
 
 #### Scoring
 
@@ -505,13 +518,14 @@ readers never need it.
     assess `CVE-2026-64564` against the opt-in source packages by name,
     so status is a version compare against the branch's first-fixed
     release.
-  - bullseye *vulnerable* — Debian has not adopted the 5.10.y line's
-    `5.10.265` fix.
-  - bullseye `linux-6.1` opt-in remains below the 6.1 branch's
-    `6.1.183` first fix, so it is *vulnerable* — same version-compare
-    method as bookworm's opt-in.
-  - The rows' *Current kernel* values come from ftp-master madison and
-    the tracker's `<suite>-security` `repositories` entries.
+  - bullseye reached the end of its LTS window on **2026-08-31** (per
+    `wiki.debian.org/LTS`'s published schedule) still *vulnerable* — the
+    tracker's JSON no longer carries a `bullseye` release entry for this
+    CVE at all, and the `linux-6.1` opt-in source package (bullseye's
+    former 6.1-line backport) no longer appears in ftp-master madison —
+    both rows are retired; no fix is coming.
+  - The remaining rows' *Current kernel* values come from ftp-master
+    madison and the tracker's `<suite>-security` `repositories` entries.
 - **Proxmox VE** (`~/src/proxmox/pve-kernel`): patch
   `…-sctp-don-t-free-the-ASCONF-s-own-transport-in-DEL-IP.patch` present as
   `0059-…` in the `proxmox-kernel-7.0` tree (branch `master`) and `0034-…`
