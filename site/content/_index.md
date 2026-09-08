@@ -3,7 +3,7 @@ title: "SCTPhantom — SCTP ASCONF transport use-after-free"
 description: "Linux kernel SCTP ASCONF DEL-IP use-after-free (CVE-2026-64564, SCTPhantom) — remote-triggerable transport UAF, local privilege escalation and container-to-host escape — distro patch status tracker"
 layout: "single"
 date: 2026-08-10
-lastmod: 2026-09-07
+lastmod: 2026-09-08
 cover:
   image: "sctphantom-tracker.png"
   alt: "SCTPhantom — Linux kernel SCTP ASCONF transport use-after-free tracker"
@@ -118,10 +118,10 @@ is fixed.
 | Distribution | Release | Current kernel | First fixed | Fixed since | Status |
 |---|---|---|---|---|---|
 | Linux kernel | mainline | 7.3-rc2 | 7.2-rc5 | 2026-07-26 | :white_check_mark: Fixed — carries `9b2854f86f0b` |
-| Linux kernel | 7.2.x | 7.2.3 | 7.2 | 2026-08-16 | :white_check_mark: Fixed |
+| Linux kernel | 7.2.x | 7.2.4 | 7.2 | 2026-08-16 | :white_check_mark: Fixed |
 | Linux kernel | 7.1.x | 7.1.13 | 7.1.6 | 2026-08-03 | :white_check_mark: Fixed — EOL |
-| Linux kernel | 6.18.x | 6.18.49 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed — LTS |
-| Linux kernel | 6.12.x | 6.12.108 | 6.12.101 | 2026-08-03 | :white_check_mark: Fixed — LTS |
+| Linux kernel | 6.18.x | 6.18.50 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed — LTS |
+| Linux kernel | 6.12.x | 6.12.109 | 6.12.101 | 2026-08-03 | :white_check_mark: Fixed — LTS |
 | Linux kernel | 6.6.x | 6.6.156 | 6.6.148 | 2026-08-03 | :white_check_mark: Fixed — LTS |
 | Linux kernel | 6.1.x | 6.1.187 | 6.1.183 | 2026-08-19 | :white_check_mark: Fixed — LTS |
 | Linux kernel | 5.15.x | 5.15.220 | 5.15.216 | 2026-08-19 | :white_check_mark: Fixed — LTS |
@@ -133,10 +133,10 @@ is fixed.
 | Debian | 12 (6.12 opt-in) | 6.12.101-1~deb12u1 | 6.12.101-1~deb12u1 | 2026-08-15 | :white_check_mark: Fixed |
 | Proxmox VE | 9 (default) | 7.0.14-15-pve | 7.0.14-10 | 2026-08-06 | :white_check_mark: Fixed — cherry-pick |
 | Proxmox VE | 8 (default) | 6.8.12-43-pve | 6.8.12-41 | 2026-08-07 | :white_check_mark: Fixed — cherry-pick |
-| NixOS | master | 6.18.49 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
-| NixOS | release-26.05 | 6.18.49 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
+| NixOS | master | 6.18.50 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
+| NixOS | release-26.05 | 6.18.50 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
 | NixOS | Unstable | 6.18.49 | 6.18.42 | 2026-08-04 | :white_check_mark: Fixed |
-| NixOS | Unstable (small) | 6.18.49 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
+| NixOS | Unstable (small) | 6.18.50 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
 | NixOS | Unstable (nixpkgs) | 6.18.49 | 6.18.42 | 2026-08-08 | :white_check_mark: Fixed |
 | NixOS | 26.05 | 6.18.49 | 6.18.42 | 2026-08-05 | :white_check_mark: Fixed |
 | NixOS | 26.05 (small) | 6.18.49 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
