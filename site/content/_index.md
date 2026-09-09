@@ -3,7 +3,7 @@ title: "SCTPhantom — SCTP ASCONF transport use-after-free"
 description: "Linux kernel SCTP ASCONF DEL-IP use-after-free (CVE-2026-64564, SCTPhantom) — remote-triggerable transport UAF, local privilege escalation and container-to-host escape — distro patch status tracker"
 layout: "single"
 date: 2026-08-10
-lastmod: 2026-09-08
+lastmod: 2026-09-09
 cover:
   image: "sctphantom-tracker.png"
   alt: "SCTPhantom — Linux kernel SCTP ASCONF transport use-after-free tracker"
@@ -129,13 +129,13 @@ is fixed.
 | Debian | sid (unstable) | 7.1.13-1 | 7.1.6-1 | 2026-08-04 | :white_check_mark: Fixed |
 | Debian | forky (testing) | 7.1.12-1 | 7.1.6-1 | 2026-08-08 | :white_check_mark: Fixed |
 | Debian | 13 (trixie) | 6.12.107-1 | 6.12.101-1 | 2026-08-06 | :white_check_mark: Fixed — DSA-6415-1 |
-| Debian | 12 (bookworm) | 6.1.187-1 | — | — | :x: Vulnerable |
+| Debian | 12 (bookworm) | 6.1.187-1 | 6.1.187-1 | 2026-09-08 | :white_check_mark: Fixed |
 | Debian | 12 (6.12 opt-in) | 6.12.101-1~deb12u1 | 6.12.101-1~deb12u1 | 2026-08-15 | :white_check_mark: Fixed |
-| Proxmox VE | 9 (default) | 7.0.14-15-pve | 7.0.14-10 | 2026-08-06 | :white_check_mark: Fixed — cherry-pick |
+| Proxmox VE | 9 (default) | 7.0.14-16-pve | 7.0.14-10 | 2026-08-06 | :white_check_mark: Fixed — cherry-pick |
 | Proxmox VE | 8 (default) | 6.8.12-43-pve | 6.8.12-41 | 2026-08-07 | :white_check_mark: Fixed — cherry-pick |
 | NixOS | master | 6.18.50 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
 | NixOS | release-26.05 | 6.18.50 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
-| NixOS | Unstable | 6.18.49 | 6.18.42 | 2026-08-04 | :white_check_mark: Fixed |
+| NixOS | Unstable | 6.18.50 | 6.18.42 | 2026-08-04 | :white_check_mark: Fixed |
 | NixOS | Unstable (small) | 6.18.50 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
 | NixOS | Unstable (nixpkgs) | 6.18.50 | 6.18.42 | 2026-08-08 | :white_check_mark: Fixed |
 | NixOS | 26.05 | 6.18.49 | 6.18.42 | 2026-08-05 | :white_check_mark: Fixed |
@@ -183,16 +183,14 @@ line: sid has been **fixed** since the `7.1.6-1` upload (upstream 7.1.6
 is the branch's first-fixed release), and forky since that same version
 migrated to testing on 2026-08-08. **trixie** (Debian 13) shipped the
 fix as `6.12.101-1` — exactly the 6.12 branch's first-fixed release —
-so it is **fixed** too. **bookworm** rides the 6.1 line, which now
-carries an upstream fix (6.1.183, 2026-08-19), but the suite has not
-shipped a kernel with the backport, so it is **vulnerable**, as the
-Debian security tracker records. It follows once Debian rebases onto a
-fixed point release or cherry-picks the fix.
+so it is **fixed** too. **bookworm** rides the 6.1 line; it is now
+**fixed** as well, via a `bookworm-security` upload of `6.1.187-1`,
+well past the 6.1 branch's `6.1.183` first-fixed release.
 
 bookworm also offers an **opt-in newer kernel**: `linux-6.12`
 (bookworm-security) reached `6.12.101-1~deb12u1` on 2026-08-15 —
-exactly the 6.12 branch's first-fixed release — so it is **fixed**,
-independently of the still-vulnerable bookworm default.
+exactly the 6.12 branch's first-fixed release — so it was **fixed**
+ahead of the bookworm default.
 
 **bullseye (Debian 11) reached the end of its LTS support window on
 2026-08-31** without ever receiving the fix — the Debian security
@@ -510,8 +508,9 @@ readers never need it.
     the suite.
   - trixie resolved *fixed*; first fixed `6.12.101-1`, shipped via
     **DSA-6415-1** (trixie-security, first seen 2026-08-06).
-  - bookworm *vulnerable* — Debian has not adopted the 6.1.y line's
-    `6.1.183` fix.
+  - bookworm resolved *fixed*; first fixed `6.1.187-1` via
+    `bookworm-security` (first seen 2026-09-08 per snapshot.debian.org);
+    no DSA number found for this upload.
   - bookworm `linux-6.12` opt-in reached `6.12.101-1~deb12u1`
     (bookworm-security, first seen 2026-08-15) — the 6.12 branch's
     first-fixed release — so it is *fixed*; security-tracker does not
