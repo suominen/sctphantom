@@ -131,11 +131,11 @@ is fixed.
 | Debian | 13 (trixie) | 6.12.107-1 | 6.12.101-1 | 2026-08-06 | :white_check_mark: Fixed — DSA-6415-1 |
 | Debian | 12 (bookworm) | 6.1.187-1 | 6.1.187-1 | 2026-09-08 | :white_check_mark: Fixed |
 | Debian | 12 (6.12 opt-in) | 6.12.101-1~deb12u1 | 6.12.101-1~deb12u1 | 2026-08-15 | :white_check_mark: Fixed |
-| Proxmox VE | 9 (default) | 7.0.14-16-pve | 7.0.14-10 | 2026-08-06 | :white_check_mark: Fixed — cherry-pick |
+| Proxmox VE | 9 (default) | 7.0.14-17-pve | 7.0.14-10 | 2026-08-06 | :white_check_mark: Fixed — cherry-pick |
 | Proxmox VE | 8 (default) | 6.8.12-43-pve | 6.8.12-41 | 2026-08-07 | :white_check_mark: Fixed — cherry-pick |
 | Proxmox VE | 8 (6.14 opt-in) | 6.14.11-9~bpo12+1 | — | — | :x: Vulnerable |
-| NixOS | master | 6.18.51 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
-| NixOS | release-26.05 | 6.18.51 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
+| NixOS | master | 6.18.52 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
+| NixOS | release-26.05 | 6.18.52 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
 | NixOS | Unstable | 6.18.51 | 6.18.42 | 2026-08-04 | :white_check_mark: Fixed |
 | NixOS | Unstable (small) | 6.18.51 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
 | NixOS | Unstable (nixpkgs) | 6.18.51 | 6.18.42 | 2026-08-08 | :white_check_mark: Fixed |
