@@ -3,7 +3,7 @@ title: "SCTPhantom — SCTP ASCONF transport use-after-free"
 description: "Linux kernel SCTP ASCONF DEL-IP use-after-free (CVE-2026-64564, SCTPhantom) — remote-triggerable transport UAF, local privilege escalation and container-to-host escape — distro patch status tracker"
 layout: "single"
 date: 2026-08-10
-lastmod: 2026-09-13
+lastmod: 2026-09-14
 cover:
   image: "sctphantom-tracker.png"
   alt: "SCTPhantom — Linux kernel SCTP ASCONF transport use-after-free tracker"
@@ -117,7 +117,7 @@ is fixed.
 
 | Distribution | Release | Current kernel | First fixed | Fixed since | Status |
 |---|---|---|---|---|---|
-| Linux kernel | mainline | 7.3-rc2 | 7.2-rc5 | 2026-07-26 | :white_check_mark: Fixed — carries `9b2854f86f0b` |
+| Linux kernel | mainline | 7.3-rc3 | 7.2-rc5 | 2026-07-26 | :white_check_mark: Fixed — carries `9b2854f86f0b` |
 | Linux kernel | 7.2.x | 7.2.5 | 7.2 | 2026-08-16 | :white_check_mark: Fixed |
 | Linux kernel | 7.1.x | 7.1.13 | 7.1.6 | 2026-08-03 | :white_check_mark: Fixed — EOL |
 | Linux kernel | 6.18.x | 6.18.51 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed — LTS |
@@ -133,6 +133,7 @@ is fixed.
 | Debian | 12 (6.12 opt-in) | 6.12.101-1~deb12u1 | 6.12.101-1~deb12u1 | 2026-08-15 | :white_check_mark: Fixed |
 | Proxmox VE | 9 (default) | 7.0.14-16-pve | 7.0.14-10 | 2026-08-06 | :white_check_mark: Fixed — cherry-pick |
 | Proxmox VE | 8 (default) | 6.8.12-43-pve | 6.8.12-41 | 2026-08-07 | :white_check_mark: Fixed — cherry-pick |
+| Proxmox VE | 8 (6.14 opt-in) | 6.14.11-9~bpo12+1 | — | — | :x: Vulnerable |
 | NixOS | master | 6.18.51 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
 | NixOS | release-26.05 | 6.18.51 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
 | NixOS | Unstable | 6.18.51 | 6.18.42 | 2026-08-04 | :white_check_mark: Fixed |
@@ -224,6 +225,14 @@ abandoned before this disclosure and that never received the fix — PVE 9's
 them: a host still booting one of these preview kernels stays vulnerable
 until it switches to its release's current default kernel, which carries
 the fix.
+
+PVE 8 additionally offers `proxmox-kernel-6.14` as a `bookworm-backports`
+opt-in for users who want newer hardware support — distinct from PVE 9's
+abandoned preview series of the same number. It is **vulnerable**: its
+Ubuntu base (`Ubuntu-6.14.0-37.37`) predates Ubuntu's own fix, and Ubuntu's
+`linux-hwe-6.14` on noble is itself end-of-life, so no further Ubuntu-side
+rebase will bring the fix in either — only a direct Proxmox cherry-pick
+would close this row, and none has landed yet.
 
 ### NixOS
 
@@ -547,6 +556,14 @@ readers never need it.
     `bookworm-6.2`, last build `6.2.16-20`) and `proxmox-kernel-6.5`
     (branch `bookworm-6.5`, last build `6.5.13-6`). All four predate this
     disclosure.
+  - PVE 8's `proxmox-kernel-6.14` opt-in (branch `bookworm-6.14`,
+    package source `bookworm-backports`) is a distinct, still-published
+    series — not the abandoned PVE 9 preview of the same number. Its
+    changelog's newest entry is `6.14.11-9~bpo12+1` (2026-05-15), with no
+    SCTP cherry-pick and no commits since; per Ubuntu's CVE tracker
+    (`ubuntu.com/security/cves/CVE-2026-64564.json`), `linux-hwe-6.14` on
+    noble is `ignored` (end of life), so no Ubuntu-side rebase will bring
+    the fix either.
 - **NixOS** (`~/src/nixos/nixpkgs`): `linux_default = packages.linux_6_18`;
   every tracked ref resolves `6.18` at or above the `6.18.42` first-fixed
   release, so all seven rows are fixed. Each row's *Current kernel* is
