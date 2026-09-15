@@ -175,9 +175,13 @@ leave behind is the edited tracker (and its commit).
       - Amazon: the ALAS signal is the repodata updateinfo.xml.gz (maps CVE
         -> ALAS -> fixed kernel NVR), NOT the JS-rendered per-CVE ALAS page
         (returns nothing headlessly). Resolve mirror.list, fetch
-        <base>repodata/updateinfo.xml.gz (zcat), grep the CVE; check all
-        kernel streams (kernel/kernel6.12/kernel6.18). Versions from
-        primary.xml.gz.
+        <base>repodata/updateinfo.xml.gz and pipe it through zcat into
+        ./scripts/alas-cve CVE-2026-64564 -- one line per advisory and
+        kernel stream (kernel/kernel6.12/kernel6.18) with the fixed
+        NVR; exit 1 means no advisory names the CVE. Never grep
+        updateinfo.xml by line: entries share physical lines and a
+        grep pairs one advisory's CVEs with its neighbour's packages.
+        Versions from primary.xml.gz.
    Exact recipes are in CLAUDE.md. A row flips to ":white_check_mark:
    Fixed" when its kernel carries the backport (reaches a fixed series
    release, or a distro advisory ships the cherry-pick). On a flip, set

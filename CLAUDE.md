@@ -81,12 +81,14 @@ follow `~/src/cve-tracker-template/LIFECYCLE.md` § "Retiring a tracker".
 ├── scripts/                                  # auto-update agent: prompt + driver
 │   ├── auto-update                           # wrapper invoked by the systemd timer
 │   ├── auto-update-prompt.txt                # prompt fed to headless Claude
+│   ├── alas-cve                              # CVE -> AL2023 advisories + fixed NVRs
 │   └── nixos-first-shipped                   # channel + commit -> first-published date
+├── tests/                                    # helper tests: `make check`
 ├── systemd/                                  # user-level timer + service units
 │   ├── sctphantom-tracker-update.service        # runs scripts/auto-update
 │   └── sctphantom-tracker-update.timer          # twice daily
 ├── flake.nix, .envrc                         # Nix dev shell: hugo + go + git
-├── Makefile                                  # `make build`, `make dist`, `make banner`
+├── Makefile                                  # `make build`, `make dist`, `make check`, `make banner`
 ├── LICENSE                                   # CC BY 4.0
 ├── README.md                                 # user-facing project README
 ├── WEBSITE.md                                # publication plan / decisions log
@@ -899,8 +901,9 @@ accumulate every point release's kernel, so pick the numerically-highest
   **`updateinfo.xml.gz`** (maps CVE → ALAS → fixed kernel NVR); the per-CVE
   ALAS HTML pages are JS-rendered and return nothing headlessly, so reading
   them falsely sees "no advisory".  Resolve the mirror, fetch
-  `<base>repodata/updateinfo.xml.gz` (plain filename) and grep the CVE for
-  the ALAS id + fixed `kernel*` version; check **all** streams (AL2023
+  `<base>repodata/updateinfo.xml.gz` (plain filename) and pipe it through
+  `zcat` into `scripts/alas-cve` (below) for the ALAS id + fixed `kernel*`
+  version; check **all** streams (AL2023
   `kernel` 6.1, opt-in `kernel6.12`, `kernel6.18`), and read current versions
   from `primary.xml.gz`.  All three AL2023 streams are in-window (as is
   AL2's 4.14, though AL2 is untracked).  Mirror:
@@ -916,7 +919,28 @@ accumulate every point release's kernel, so pick the numerically-highest
   can flip the row either.  When a kernel-stream security ALAS from
   around the disclosure window ships a build the stream has since
   adopted while the CVE grep still misses, look closer before
-  recording "no ALAS".
+  recording "no ALAS".  **`updateinfo.xml` is not line-safe — never
+  grep it by line:** it packs the tail of one `<update>` entry
+  (references, pkglist) and the head of the next on a single physical
+  line, so a line-oriented grep or awk pairs one advisory's CVE
+  references with its neighbour's package list (the CVE-2026-68138
+  tracker missed its `kernel6.18` advisory for two weeks that way).
+  Use the `scripts/alas-cve` helper, which parses the XML and prints
+  one tab-separated line per advisory and kernel stream — advisory id,
+  issue date, severity, package, version-release — and exits 1 when no
+  advisory names the CVE:
+
+  ```
+  curl -fsSL "${base}repodata/updateinfo.xml.gz" | zcat | ~/src/sctphantom/scripts/alas-cve CVE-2026-64564
+  ```
+
+  Invoke it by that absolute primary-checkout path, as with
+  `nixos-first-shipped` (the worktree copy is untrusted and not
+  allowlisted).  `-p <regex>` widens the package filter beyond the
+  kernel stream packages.  Its tests live in `tests/` (`make check`).
+  The same line-packing applies to `other.xml`, so a changelog
+  attribution there needs an XML parse too (interactively, `python3`
+  `xml.etree`; no helper covers it yet).
 
 ## Debian kernel version source
 

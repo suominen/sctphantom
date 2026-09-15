@@ -239,9 +239,11 @@ HELPERS="${CODE}/scripts"
 # mode_tools adds only what this tracker kind's lookup recipes need.
 case "${MODE}" in
 kernel)
-  # zcat/gunzip unpack the gzipped repodata and Packages indexes, and
-  # git describe maps a fix commit to the release that carries it --
-  # kernel-side lookups package mode does not need.
+  # zcat/gunzip unpack the gzipped repodata and Packages indexes,
+  # alas-cve maps a CVE to the Amazon Linux advisories that fix it
+  # (updateinfo.xml is not line-safe for grep), and git describe maps
+  # a fix commit to the release that carries it -- kernel-side lookups
+  # package mode does not need.
   #
   # The pve-kernel branch-listing rules cover the one `git -C` read
   # the project settings have no rule for: nothing behind `git -C` is
@@ -255,6 +257,7 @@ kernel)
   mode_tools="$(cat << EOF
     "Bash(zcat:*)",
     "Bash(gunzip:*)",
+    "Bash(${HELPERS}/alas-cve:*)",
     "Bash(git describe:*)",
     "Bash(git -C ~/src/proxmox/pve-kernel branch -r:*)",
     "Bash(git -C ${HOME}/src/proxmox/pve-kernel branch -r:*)"

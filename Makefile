@@ -5,7 +5,7 @@ SSH_IDENTITY := $(HOME)/.ssh/id-kimmo-cloud-htdocs
 BANNER_SVG := $(SITE)/assets/sctphantom-tracker.svg
 BANNER_PNG := $(SITE)/static/sctphantom-tracker.png
 
-.PHONY: build dist banner
+.PHONY: build dist banner check
 
 # Rasterise the social-media / OpenGraph banner from its SVG source.
 # The PNG is committed, so this — and the resvg + Roboto-fonts
@@ -18,3 +18,7 @@ build:
 
 dist: build
 	rsync -avz --delete --chmod=Da+rx,Fa+r -e 'ssh -i $(SSH_IDENTITY) -o IdentitiesOnly=yes' $(SITE)/public/ $(DEST)
+
+# Run the helper-script tests under scripts/.
+check:
+	python3 -m unittest discover -s tests
