@@ -3,7 +3,7 @@ title: "SCTPhantom — SCTP ASCONF transport use-after-free"
 description: "Linux kernel SCTP ASCONF DEL-IP use-after-free (CVE-2026-64564, SCTPhantom) — remote-triggerable transport UAF, local privilege escalation and container-to-host escape — distro patch status tracker"
 layout: "single"
 date: 2026-08-10
-lastmod: 2026-09-14
+lastmod: 2026-09-15
 cover:
   image: "sctphantom-tracker.png"
   alt: "SCTPhantom — Linux kernel SCTP ASCONF transport use-after-free tracker"
@@ -118,14 +118,14 @@ is fixed.
 | Distribution | Release | Current kernel | First fixed | Fixed since | Status |
 |---|---|---|---|---|---|
 | Linux kernel | mainline | 7.3-rc3 | 7.2-rc5 | 2026-07-26 | :white_check_mark: Fixed — carries `9b2854f86f0b` |
-| Linux kernel | 7.2.x | 7.2.5 | 7.2 | 2026-08-16 | :white_check_mark: Fixed |
+| Linux kernel | 7.2.x | 7.2.6 | 7.2 | 2026-08-16 | :white_check_mark: Fixed |
 | Linux kernel | 7.1.x | 7.1.13 | 7.1.6 | 2026-08-03 | :white_check_mark: Fixed — EOL |
-| Linux kernel | 6.18.x | 6.18.51 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed — LTS |
-| Linux kernel | 6.12.x | 6.12.109 | 6.12.101 | 2026-08-03 | :white_check_mark: Fixed — LTS |
-| Linux kernel | 6.6.x | 6.6.156 | 6.6.148 | 2026-08-03 | :white_check_mark: Fixed — LTS |
-| Linux kernel | 6.1.x | 6.1.187 | 6.1.183 | 2026-08-19 | :white_check_mark: Fixed — LTS |
-| Linux kernel | 5.15.x | 5.15.220 | 5.15.216 | 2026-08-19 | :white_check_mark: Fixed — LTS |
-| Linux kernel | 5.10.x | 5.10.269 | 5.10.265 | 2026-08-19 | :white_check_mark: Fixed — LTS |
+| Linux kernel | 6.18.x | 6.18.52 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed — LTS |
+| Linux kernel | 6.12.x | 6.12.110 | 6.12.101 | 2026-08-03 | :white_check_mark: Fixed — LTS |
+| Linux kernel | 6.6.x | 6.6.157 | 6.6.148 | 2026-08-03 | :white_check_mark: Fixed — LTS |
+| Linux kernel | 6.1.x | 6.1.188 | 6.1.183 | 2026-08-19 | :white_check_mark: Fixed — LTS |
+| Linux kernel | 5.15.x | 5.15.221 | 5.15.216 | 2026-08-19 | :white_check_mark: Fixed — LTS |
+| Linux kernel | 5.10.x | 5.10.270 | 5.10.265 | 2026-08-19 | :white_check_mark: Fixed — LTS |
 | Debian | sid (unstable) | 7.1.13-1 | 7.1.6-1 | 2026-08-04 | :white_check_mark: Fixed |
 | Debian | forky (testing) | 7.1.13-1 | 7.1.6-1 | 2026-08-08 | :white_check_mark: Fixed |
 | Debian | 13 (trixie) | 6.12.107-1 | 6.12.101-1 | 2026-08-06 | :white_check_mark: Fixed — DSA-6415-1 |
@@ -137,16 +137,16 @@ is fixed.
 | NixOS | master | 6.18.52 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
 | NixOS | release-26.05 | 6.18.52 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
 | NixOS | Unstable | 6.18.51 | 6.18.42 | 2026-08-04 | :white_check_mark: Fixed |
-| NixOS | Unstable (small) | 6.18.51 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
+| NixOS | Unstable (small) | 6.18.52 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
 | NixOS | Unstable (nixpkgs) | 6.18.51 | 6.18.42 | 2026-08-08 | :white_check_mark: Fixed |
-| NixOS | 26.05 | 6.18.50 | 6.18.42 | 2026-08-05 | :white_check_mark: Fixed |
-| NixOS | 26.05 (small) | 6.18.51 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
+| NixOS | 26.05 | 6.18.51 | 6.18.42 | 2026-08-05 | :white_check_mark: Fixed |
+| NixOS | 26.05 (small) | 6.18.52 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
 | Rocky Linux / RHEL | 10 | 6.12.0-211.54.1.el10_2 | — | — | :x: Vulnerable — no RHSA yet |
 | Rocky Linux / RHEL | 9 | 5.14.0-687.46.1.el9_8 | — | — | :x: Vulnerable — no RHSA yet |
 | Rocky Linux / RHEL | 8 | 4.18.0-553.162.1.el8_10 | — | — | :x: Vulnerable — no RHSA yet |
-| Amazon Linux | 2023 (default) | 6.1.182-227.379 | — | — | :x: Vulnerable — no ALAS yet |
+| Amazon Linux | 2023 (default) | 6.1.186-228.374 | 6.1.182-227.379 | 2026-08-31 | :white_check_mark: Fixed — ALAS2023-2026-2107 |
 | Amazon Linux | 2023 (6.12 opt-in) | 6.12.103-127.188 | 6.12.103-127.188 | 2026-08-31 | :white_check_mark: Fixed — ALAS2023-2026-2110 |
-| Amazon Linux | 2023 (6.18 opt-in) | 6.18.44-99.149 | — | — | :x: Vulnerable — no ALAS yet |
+| Amazon Linux | 2023 (6.18 opt-in) | 6.18.48-107.148 | 6.18.44-99.149 | 2026-08-31 | :white_check_mark: Fixed — ALAS2023-2026-2106 |
 {.distros}
 
 ### Linux kernel
@@ -288,16 +288,24 @@ CloudLinux track the RHEL determination.
 
 ### Amazon Linux
 
-Amazon has fixed one of the three AL2023 kernel streams. The
-`kernel6.12` opt-in shipped **ALAS2023-2026-2110** (2026-08-31), rebasing
-onto upstream **6.12.103** — past the 6.12 branch's `6.12.101` first fix
-— so it is **fixed**. The default `kernel` (6.1 line) and the
-`kernel6.18` opt-in remain **vulnerable**: no ALAS names this CVE for
-either stream yet. The default stream's `6.1.182` build is still below
-its branch's `6.1.183` first fix, but the `kernel6.18` stream's `6.18.44`
-build has already crossed the 6.18 branch's `6.18.42` first fix without
-an ALAS confirming adoption — a version compare alone doesn't establish
-the fix landed, so the row stays vulnerable pending that advisory.
+All three AL2023 kernel streams are now **fixed**. The `kernel6.12`
+opt-in shipped **ALAS2023-2026-2110** (2026-08-31), rebasing onto
+upstream **6.12.103** — past the 6.12 branch's `6.12.101` first fix.
+The default `kernel` (6.1 line) stream shipped **ALAS2023-2026-2107**
+(2026-08-31), fixing it at **6.1.182-227.379.amzn2023** — a build
+*below* the 6.1 branch's own `6.1.183` first-fixed release, another
+case of Amazon backporting into an already-shipped build rather than
+rebasing past the upstream threshold. The `kernel6.18` opt-in shipped
+**ALAS2023-2026-2106** (2026-08-31), fixing it at
+**6.18.44-99.149.amzn2023**, past the 6.18 branch's `6.18.42` first fix.
+Both ALAS2023-2026-2106 and -2107 took weeks to appear in the polled
+repodata after their issue date — the same mirror-snapshot lag this
+tracker has flagged before. The `kernel6.18` stream's build had already
+crossed its branch's first-fixed version before the advisory surfaced,
+but a version compare alone couldn't establish the fix had landed; the
+default stream's fixed build sits *below* its branch's first-fixed
+version, so no version threshold could ever have flagged it — only the
+ALAS itself confirms either backport.
 
 ## Detection
 
@@ -592,15 +600,18 @@ readers never need it.
   rows' *Current kernel* NVRs are read from BaseOS repodata
   (`primary.xml.gz`, highest `rel`). No AlmaLinux errata or OSV entry
   for this CVE yet, so AlmaLinux is not ahead of the bare VEX record.
-- **Amazon Linux**: the AL2023 `updateinfo.xml.gz` carries exactly one
-  reference to CVE-2026-64564, in **ALAS2023-2026-2110** (issued
-  2026-08-31), whose `pkglist` fixes `kernel6.12` at `6.12.103-127.188`.
-  No ALAS references this CVE for the default `kernel` or `kernel6.18`
-  streams. The per-stream *Current kernel* values are read from
-  `primary.xml.gz`: default `kernel` at `6.1.182-227.379` (below its
-  branch's `6.1.183` first fix); `kernel6.18` at `6.18.44-99.149` (above
-  its branch's `6.18.42` first fix, but with no ALAS naming this CVE for
-  the stream, so not counted as adopted).
+- **Amazon Linux**: the AL2023 `updateinfo.xml.gz` now carries three
+  references to CVE-2026-64564: **ALAS2023-2026-2107** (issued
+  2026-08-31, updated 2026-09-04) fixes the default `kernel` stream at
+  `6.1.182-227.379.amzn2023`; **ALAS2023-2026-2106** (issued 2026-08-31,
+  updated 2026-09-09) fixes `kernel6.18` at `6.18.44-99.149.amzn2023`;
+  **ALAS2023-2026-2110** (issued 2026-08-31) fixes `kernel6.12` at
+  `6.12.103-127.188.amzn2023`. All three advisories carry the same
+  2026-08-31 issue date as first seen in this run; -2106 and -2107 were
+  absent from the polled `updateinfo.xml.gz` on prior runs despite that
+  date, the same mirror-snapshot lag noted for OVSwrap's
+  CVE-2026-64531. The per-stream *Current kernel* values are read from
+  `primary.xml.gz`.
 {{< /details >}}
 
 ## References
