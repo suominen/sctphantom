@@ -15,6 +15,10 @@ site/_vendor/
 site/public/
 site/resources/
 
+# Python (make check compiles tests/ into bytecode)
+__pycache__/
+*.pyc
+
 # Editor / OS
 *~
 .DS_Store
