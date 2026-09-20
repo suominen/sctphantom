@@ -25,13 +25,14 @@ Deployment plan and current setup state live in
 
 ## Local development
 
-Requires Hugo extended (≥ 0.146.0) and Go (for Hugo Modules to fetch the
-PaperMod theme).
+Requires Hugo ≥ 0.146.0 (the standard edition suffices: no Sass or image
+processing in this site) and Go (for Hugo Modules to fetch the PaperMod
+theme).
 
 ### With Nix (recommended)
 
 ```sh
-nix develop          # dev shell: hugo, go, git, resvg
+nix develop          # dev shell: hugo, go, resvg + fonts, and every lookup tool
 cd site
 hugo server          # local preview at http://localhost:1313/sctphantom/
 ```
@@ -41,7 +42,8 @@ shell auto-activates whenever you `cd` into the repo.
 
 ### Without Nix
 
-Install Hugo extended ≥ 0.146.0 and Go ≥ 1.24 yourself, then:
+Install Hugo ≥ 0.146.0 and Go ≥ 1.24 yourself (`CLAUDE.md` § "Build
+environment" has the `go install` recipe), then:
 
 ```sh
 cd site
@@ -53,7 +55,7 @@ hugo server          # http://localhost:1313/sctphantom/
 ```sh
 make build       # local build into site/public/
 make dist        # build, then rsync to haig:/sctphantom/
-make banner      # re-rasterise the social banner SVG → PNG (needs resvg + Roboto)
+make banner      # re-rasterise the social banner SVG → PNG (needs resvg + the banner fonts)
 ```
 
 `make dist` runs `make build` first.  `make banner` is only needed after
@@ -63,7 +65,7 @@ editing `site/assets/sctphantom-tracker.svg`; the rendered PNG is committed.
 
 ```
 .
-├── flake.nix              # Nix dev environment (hugo, go, git, resvg + RPM tools)
+├── flake.nix              # Nix dev environment (build, banner, publish, lookup tools)
 ├── .envrc                 # direnv hook → `use flake`
 ├── .gitignore
 ├── Makefile               # `make build`, `make dist`, `make banner`

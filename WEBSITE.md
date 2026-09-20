@@ -8,14 +8,14 @@ only the content and a few config strings differ.
 ## Architecture
 
 - **Source repo:** `github.com/suominen/sctphantom` (this repo).
-- **Generator:** Hugo extended, ≥ 0.146.0.  Run locally; nothing built in
-  CI.
+- **Generator:** Hugo ≥ 0.146.0 (standard edition). Run locally; nothing
+  built in CI.
 - **Source layout:** Hugo project under `site/`.  The tracker is a single
   page at `site/content/_index.md`.
 - **Theme:** PaperMod, integrated as a Hugo Module (no submodule).
-- **Dev environment:** Nix flake (`flake.nix`) provides hugo + go + git +
-  resvg (for `make banner`) + curl/libarchive/zstd (the auto-update agent's
-  RPM-unpacking tools).  Auto-activates via `.envrc` if direnv is installed.
+- **Dev environment:** Nix flake (`flake.nix`) provides everything the
+  build, banner, publish, and lookup recipes call (Claude Code itself
+  excepted). Auto-activates via `.envrc` with direnv.
 - **Build:** `make build` → `hugo --minify --gc --cleanDestinationDir`,
   output in `site/public/`.
 - **Publish:** `make dist` → `rsync -avz --delete site/public/` →
