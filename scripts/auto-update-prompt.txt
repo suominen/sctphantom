@@ -150,7 +150,7 @@ leave behind is the edited tracker (and its commit).
         read each release's status + the version under `repositories`
         (a <suite>-security entry = shipped as a security update). Use
         madison only for the base-suite version and the sid/testing lineage:
-          curl -fsS 'https://api.ftp-master.debian.org/madison?package=linux&s=sid,forky,trixie,bookworm,bullseye&text=on'
+          curl -fsS 'https://api.ftp-master.debian.org/madison?package=linux&s=sid,forky,trixie,bookworm&text=on'
       - Proxmox: read *Current kernel* ONLY from the pve-no-subscription
         Packages.gz (needs zcat) — the published `proxmox-kernel-<series>`
         build. The pve-kernel git changelog LEADS apt, so use it only to

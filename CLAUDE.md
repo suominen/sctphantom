@@ -220,13 +220,18 @@ SCTP and are in-window, but no ALAS is coming); don't poll AL2 repodata and
 don't re-add AL2 rows.  AL2023 remains supported and is polled as usual.
 
 Debian suites get one row for the **default** `linux` kernel and, where
-one exists, a separate row per opt-in alternative kernel package (e.g.
-bullseye's `linux-6.1` source package, the bookworm 6.1 kernel rebuilt
-for bullseye — row `11 (6.1 opt-in)`).  Because the bug is ancient, every
-Debian kernel — bullseye's 5.10 default, bookworm's 6.1 default, and every
-opt-in — is in-window; a suite is fixed only once its kernel carries the
-backport (trixie and sid do at seed; bookworm and bullseye do not).  An
-opt-in row's verdict never flips the default row's.  The same
+one exists, a separate row per opt-in alternative kernel package that
+ships as its own source package (bookworm's `linux-6.12`, the trixie
+6.12 kernel rebuilt for bookworm — row `12 (6.12 opt-in)`); the
+`-backports` rebuild of the newer suite's `linux` source is mentioned
+in the `### Debian` prose instead.  **bullseye** (Debian 11) left LTS
+security support on **2026-08-31** without the fix and gets **no rows**
+— don't poll it; its permanent `:x:` is one paragraph in the
+`### Debian` prose.  Because the bug is ancient, every Debian kernel —
+bookworm's 6.1 default, trixie's 6.12 default, and every opt-in — is
+in-window; a suite is fixed only once its kernel carries the backport
+(trixie and sid did at seed; bookworm followed via a `bookworm-security`
+upload).  An opt-in row's verdict never flips the default row's.  The same
 default-plus-variant row pattern applies
 to Proxmox (`proxmox-kernel-*` series), with two wrinkles: a default
 row is labelled plain `9 (default)` — its series is visible in *Current
@@ -510,7 +515,8 @@ systemctl --user enable --now sctphantom-tracker-update.timer
 ```
 
 The timer fires at `05,17:50` — staggered from the sibling trackers
-(ovswrap `:05`, zapscape `:20`, CVE-2026-42533 `:35`) so the shared
+(CVE-2026-81642 `:05`, dirtyah6 `:20`, CVE-2025-39964 `:35` in the same
+hours; the rest fire in the `06,18` and `07,19` hours) so the shared
 kernel clones are not fetched simultaneously.  Verify the live set with
 `systemctl --user list-timers | grep tracker` — this in-doc list has gone
 stale before.
@@ -806,11 +812,17 @@ changelog and compare it against Ubuntu's fixed version for that
 series in the Ubuntu CVE tracker
 (`https://ubuntu.com/security/cves/CVE-2026-64564.json` — the
 `packages[].statuses[]` entries; `released` + version).  Base ≥
-Ubuntu's fixed version ⇒ the PVE build carries the fix.  Kernel.org
-EOL for the series is irrelevant here — Ubuntu keeps fixing series
-long after upstream EOL.  Named cherry-picks remain the signal only
-for series Ubuntu no longer fixes (superseded/`old` series, and
-opt-ins whose Ubuntu HWE source is EOL).  To confirm a cherry-pick,
+Ubuntu's fixed version ⇒ the PVE build carries the fix.  Prove it
+rather than trusting the version compare: the Ubuntu build's changelog
+at
+`https://changelogs.ubuntu.com/changelogs/pool/main/l/linux/linux_<ver>/changelog`
+lists every upstream stable subject it pulled in, so grep it for
+`don't free the ASCONF's own transport` (Launchpad's git `plain` file
+URLs return 403 headlessly, so the source itself cannot be read that
+way).  Kernel.org EOL for the series is irrelevant here — Ubuntu keeps
+fixing series long after upstream EOL.  Named cherry-picks remain the
+signal only for series Ubuntu no longer fixes (superseded/`old` series,
+and opt-ins whose Ubuntu HWE source is EOL).  To confirm a cherry-pick,
 read the packaging changelog in Proxmox's kernel git, where Proxmox
 lists every security cherry-pick by name/CVE.  The cgit HTML may be
 gated, so read it from the shared local clone at
@@ -885,8 +897,56 @@ justification) and `remediations` the fix state; a shipped RHSA
 appears as a `vendor_fix` remediation with the fixed kernel NVR.
 When one appears, that NVR is the target; Rocky rebuilds it as an
 RLSA, with AlmaLinux the fastest rebuild (cross-check OSV
-`https://api.osv.dev/v1/vulns/CVE-2026-64564`).  The RPM repodata below then
-confirms the Rocky ship and gives the current NVR.
+`https://api.osv.dev/v1/vulns/CVE-2026-64564`, which lists the ALSA).  The
+RPM repodata below then confirms the Rocky ship and gives the current
+NVR — and expect Rocky to **skip the exact RHEL NVR** and publish the
+next build instead, so *First fixed* is the first Rocky build past the
+RHSA NVR, not the RHSA NVR.  For *Fixed since* use that build's upload
+date from the mirror directory listing
+`https://dl.rockylinux.org/pub/rocky/<N>/BaseOS/x86_64/os/Packages/k/`:
+Rocky's own `updateinfo.xml` may name no advisory for the CVE at all,
+and the errata API (`apollo.build.resf.org/api/v3/advisories/`) ignores
+its `?cve=` / `?search=` filters and returns the newest advisories
+whatever is asked, so neither is a usable date source.
+
+**Positive changelog cross-check (gated).**  For a Moderate CVE Red Hat
+often defers the fix for months, so the VEX record can keep the EL
+products under `known_affected` with no `vendor_fix` while the shipped
+kernel is what actually matters — the backport lands in the kernel's
+RPM `%changelog` (the binary) before, or without, an RHSA ever
+appearing, so don't rely on the VEX remediation alone for the flip.
+**Guardrail:** the *Current kernel* version is pulled from
+`primary.xml.gz` every run anyway; run this extra check **only when
+that version actually moved for a row still `:x:` / `:warning:`** —
+never on a no-op run, and never for an already-Fixed row.
+`other.xml.gz` is a large fetch, so gating it on a real version change
+for an unfixed row keeps it off the many quiet runs.  When the gate
+opens, pull the BaseOS `*-other.xml.gz` (resolve its href from
+`repomd.xml`, same as `primary.xml.gz`) and grep the kernel changelog
+for the CVE id:
+
+```
+curl -fsSL "${base}repodata/<hash>-other.xml.gz" | zcat | grep -c CVE-2026-64564
+```
+
+On a nonzero count, confirm that the hit sits in a `kernel`
+`%changelog` entry (`other.xml.gz` carries every package's changelog
+on one stream, so it is not package-scoped — though a kernel CVE id
+realistically appears only in the `kernel` / `kernel-rt` changelogs).
+`grep -B2` usually shows the enclosing `<package>` element, but
+`other.xml` packs entries onto shared physical lines (see the Amazon
+note below), so if the context is ambiguous parse it as XML instead of
+trusting line adjacency.  A confirmed hit means the backport is in the
+shipped binary: flip the row to Fixed even if the VEX still lists the
+product as affected, set *First fixed* to the first Rocky build carrying
+it, and *Fixed since* to that build's date (the mirror `Packages/k/`
+listing above).  A **miss is not proof of absence**: repodata keeps only
+the ~10 newest changelog entries per build, so a fix that shipped in an
+older build and scrolled off the tail won't show here — but such a fix
+is already reflected in the VEX `vendor_fix` / an RHSA, so the two
+signals cover each other.  Treat the changelog grep as the positive
+early-detector and the VEX record as the backstop; neither alone is
+sufficient.
 
 Both ship `kernel` as an RPM; pull versions straight from repodata
 (`repomd.xml` → the `*-primary.xml.gz` index).  The EL `os/` repos
@@ -896,7 +956,8 @@ accumulate every point release's kernel, so pick the numerically-highest
 - **Rocky** BaseOS: `https://dl.rockylinux.org/pub/rocky/<8|9|10>/BaseOS/x86_64/os`.
   Verdicts follow the Red Hat record: at seed all of Rocky 8 / 9 / 10 are
   affected, awaiting an RHSA.  An affected row flips only when the BaseOS
-  kernel NVR reaches the RHEL fixed build.
+  kernel NVR reaches (or, more likely, passes) the RHEL fixed build, or
+  the gated changelog cross-check above confirms the backport.
 - **Amazon Linux**: the machine-readable ALAS signal is the repodata
   **`updateinfo.xml.gz`** (maps CVE → ALAS → fixed kernel NVR); the per-CVE
   ALAS HTML pages are JS-rendered and return nothing headlessly, so reading
@@ -951,8 +1012,8 @@ Debian often backports the fix to a version *below* the upstream
 first-fixed release.  Every Debian kernel carries SCTP and is in-window —
 there is no "predates the bug" suite here.  At seed the tracker resolves
 trixie (`6.12.101-1`) and sid (`7.1.7-1`) *fixed*, and bookworm
-(`6.1.180-1`) and bullseye (`5.10.262-1`) *vulnerable* (their branches
-carry no backport).
+(`6.1.180-1`) *vulnerable* (its branch carried no backport yet).
+bullseye left LTS security support on 2026-08-31 and is untracked.
 
 Read status and fixed version straight from the security tracker. WebFetch
 the human-readable per-CVE page, or `curl` the JSON and read the
@@ -966,10 +1027,10 @@ curl -fsSL 'https://security-tracker.debian.org/tracker/data/json'
 
 Use the dak madison API only for the base-suite version and the
 sid/testing lineage (unstable=sid, testing=forky, stable=trixie,
-oldstable=bookworm, oldoldstable=bullseye):
+oldstable=bookworm):
 
 ```
-curl -fsSL 'https://api.ftp-master.debian.org/madison?package=linux&s=sid,forky,trixie,bookworm,bullseye&text=on'
+curl -fsSL 'https://api.ftp-master.debian.org/madison?package=linux&s=sid,forky,trixie,bookworm&text=on'
 ```
 
 For a *Fixed since* date, use the `first_seen` of the fixed version in
@@ -993,7 +1054,7 @@ vulnerable code.
 | CVE record | <https://www.cve.org/CVERecord?id=CVE-2026-64564> |
 | stable point release banner | <https://www.kernel.org/finger_banner> |
 | Debian security tracker | <https://security-tracker.debian.org/tracker/CVE-2026-64564> |
-| Debian package madison (dak-backed) | <https://api.ftp-master.debian.org/madison?package=linux&s=sid,forky,trixie,bookworm,bullseye&text=on> |
+| Debian package madison (dak-backed) | <https://api.ftp-master.debian.org/madison?package=linux&s=sid,forky,trixie,bookworm&text=on> |
 | Red Hat security data | <https://access.redhat.com/security/cve/CVE-2026-64564> |
 | AlmaLinux errata | <https://errata.almalinux.org/> |
 | Amazon Linux ALAS | <https://alas.aws.amazon.com/> |
@@ -1015,8 +1076,9 @@ several distro sites are JS-rendered SPAs that don't render via WebFetch.
   prose note, not a verdict change.  AlmaLinux ships ahead of
   Rocky/RHEL and is the leading indicator for the fix.
 - **Debian / Ubuntu / Proxmox VE:** every kernel here is in-window (the bug
-  is ancient) — trixie/sid are fixed, bookworm/bullseye are not; PVE 9
-  (7.0) and PVE 8 (6.8) both carry the 2026-08-07 cherry-pick.
+  is ancient) — trixie/sid were fixed at seed and bookworm followed via
+  `bookworm-security`; bullseye is EOL since 2026-08-31 and untracked;
+  PVE 9 (7.0) and PVE 8 (6.8) both carry the 2026-08-07 cherry-pick.
 - **NixOS:** seven refs are tracked, not one default — see *Local nixpkgs
   clone for NixOS channel verification*.  Resolve `linux_default` at each
   ref separately (it can differ between channels) and decide each verdict
