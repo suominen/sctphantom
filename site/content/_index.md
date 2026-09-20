@@ -3,7 +3,7 @@ title: "SCTPhantom — SCTP ASCONF transport use-after-free"
 description: "Linux kernel SCTP ASCONF DEL-IP use-after-free (CVE-2026-64564, SCTPhantom) — remote-triggerable transport UAF, local privilege escalation and container-to-host escape — distro patch status tracker"
 layout: "single"
 date: 2026-08-10
-lastmod: 2026-09-19
+lastmod: 2026-09-20
 cover:
   image: "sctphantom-tracker.png"
   alt: "SCTPhantom — Linux kernel SCTP ASCONF transport use-after-free tracker"
@@ -538,8 +538,9 @@ readers never need it.
     `wiki.debian.org/LTS`'s published schedule) still *vulnerable* — the
     tracker's JSON no longer carries a `bullseye` release entry for this
     CVE at all, and the `linux-6.1` opt-in source package (bullseye's
-    former 6.1-line backport) no longer appears in ftp-master madison —
-    both rows are retired; no fix is coming.
+    former 6.1-line backport) no longer appears in ftp-master madison.
+    No fix is coming for either kernel; a host still on bullseye should
+    move to bookworm or newer.
   - The remaining rows' *Current kernel* values come from ftp-master
     madison and the tracker's `<suite>-security` `repositories` entries.
 - **Proxmox VE** (`~/src/proxmox/pve-kernel`): patch
