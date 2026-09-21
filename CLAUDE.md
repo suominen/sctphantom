@@ -311,7 +311,8 @@ Each run:
   and Ubuntu for the Proxmox rows.
 
 `zcat` / `gunzip` **are** in the headless allowlist — use them for the
-`Packages.gz` / repodata pulls — as are `grep`, `sort`, `jq` and `tee`
+`Packages.gz` / repodata pulls — as are `grep`, `sort`, `rpmsort`,
+`tail`, `jq`, `xq` and `tee`
 (`tee` because a `>` redirection into the worktree is refused).  Pull
 only kernel versions and advisory state — the tracker records no other
 per-distro facts.
@@ -934,21 +935,39 @@ never on a no-op run, and never for an already-Fixed row.
 `other.xml.gz` is a large fetch, so gating it on a real version change
 for an unfixed row keeps it off the many quiet runs.  When the gate
 opens, pull the BaseOS `*-other.xml.gz` (resolve its href from
-`repomd.xml`, same as `primary.xml.gz`) and grep the kernel changelog
-for the CVE id:
+`repomd.xml`, same as `primary.xml.gz`) and ask it, with an XPath
+query, for the `kernel` changelog entries that name the CVE.  Use `xq`
+(sibprogrammer's Go `xq`, Debian package `xq`; allowlisted for the
+headless run) rather than a line grep: it parses the document, so the
+query does not depend on how createrepo_c happens to serialise it
+(today one node per line; a grep would silently break the day that
+changes).  Each entry's `author` attribute ends in `[<NVR>]`, the RHEL
+build the change landed in, and empty output means no entry names the
+CVE (`xq` exits 0 either way — read the output, not the status):
 
 ```
-curl -fsSL "${base}repodata/<hash>-other.xml.gz" | zcat | grep -c CVE-2026-64564
+curl -fsSL "${base}repodata/<hash>-other.xml.gz" | zcat | xq -x '//package[@name="kernel"]/changelog[contains(., "CVE-2026-64564")]/@author' | sort -u
 ```
 
-On a nonzero count, confirm that the hit sits in a `kernel`
-`%changelog` entry (`other.xml.gz` carries every package's changelog
-on one stream, so it is not package-scoped — though a kernel CVE id
-realistically appears only in the `kernel` / `kernel-rt` changelogs).
-`grep -B2` usually shows the enclosing `<package>` element, but
-`other.xml` packs entries onto shared physical lines (see the Amazon
-note below), so if the context is ambiguous parse it as XML instead of
-trusting line adjacency.  A confirmed hit means the backport is in the
+On a hit, list the shipped Rocky `kernel` builds whose changelog
+carries the entry as `ver-rel`, oldest first — the first line is
+*First fixed* (Rocky may skip the exact RHEL NVR, so it can be later
+than the bracket; the EL `os/` repos keep every build, and a build
+never drops its own newest entries, so the oldest build still
+listing the entry is the first one that shipped it).  The `jq` and
+`grep -o` stages are the ones the highest-build recipe uses, for the
+same reason: `xq -n` prints the raw `<version …/>` element, which
+`rpmsort` would order lexically:
+
+```
+curl -fsSL "${base}repodata/<hash>-other.xml.gz" | zcat | xq -n -x '//package[@name="kernel"][changelog[contains(., "CVE-2026-64564")]]/version' | sort -u | jq -R -r 'capture("epoch=\"(?<e>[^\"]+)\"") + capture("ver=\"(?<v>[^\"]+)\"") + capture("rel=\"(?<r>[^\"]+)\"") | "kernel-\(.e):\(.v)-\(.r)"' | rpmsort | grep -o '[^:][^:]*$'
+```
+
+Fetch once with `| zcat | tee other.xml` and query the file if you
+want to avoid pulling it twice.  The `kernel` subpackages
+(`kernel-core`, `kernel-modules`, …) share the same changelog, which
+is why the query pins `@name="kernel"`.
+A confirmed hit means the backport is in the
 shipped binary: flip the row to Fixed even if the VEX still lists the
 product as affected, set *First fixed* to the first Rocky build carrying
 it, and *Fixed since* to that build's date (the mirror `Packages/k/`
@@ -956,14 +975,47 @@ listing above).  A **miss is not proof of absence**: repodata keeps only
 the ~10 newest changelog entries per build, so a fix that shipped in an
 older build and scrolled off the tail won't show here — but such a fix
 is already reflected in the VEX `vendor_fix` / an RHSA, so the two
-signals cover each other.  Treat the changelog grep as the positive
+signals cover each other.  Treat the changelog query as the positive
 early-detector and the VEX record as the backstop; neither alone is
 sufficient.
 
 Both ship `kernel` as an RPM; pull versions straight from repodata
 (`repomd.xml` → the `*-primary.xml.gz` index).  The EL `os/` repos
-accumulate every point release's kernel, so pick the numerically-highest
-`rel` (`sort -V`).
+accumulate every point release's kernel, so pick the highest build
+with `rpmsort`, never a plain `sort -V`.
+
+**Highest build: `rpmsort`, never `sort -V`.** Order the `kernel`
+`ver`/`rel` pairs from `primary.xml.gz` with `rpmsort` (Debian
+package `rpm`; allowlisted for the headless run), which applies
+RPM's own comparison — a numeric segment beats an alphabetic one, so
+`553.163.1.el8_10` sorts above `553.el8_10`, where a plain `sort -V`
+on the raw attribute puts EL8's base build on top.  **Feed it real
+`kernel-<epoch>:<ver>-<rel>` strings.** `rpmsort` splits each line
+at its last two dashes and compares whatever precedes them as a
+package *name* with plain `strcmp`; only the version and release
+segments get RPM comparison.  The raw `<version …/>` element has no
+dash, so the whole line is a "name" and sorts lexically: on live
+Rocky 8 `553.el8_10` lands last and `tail -1` returns the base
+build, and on AL2023 lexical order ranks `6.12.95` above `6.12.103`
+and `6.18.8` above `6.18.48`.  A bare `ver-rel` is no safer: its
+`ver` becomes the "name", which is right only while every line
+shares one `ver` (`4.18.9-1.el8` sorts above `4.18.10-1.el8`).  The
+epoch goes in front of the version because AL2023 has bumped it
+mid-stream (`kernel` and `kernel6.12` carry both `0` and `1`), and
+an epoch bump is allowed to reset `ver-rel`; `rpmvercmp` splits on
+`:` like on `.`, so `1:6.12.103` outranks `0:6.13.1`.  Build the
+string with `jq` (allowlisted; a line without `epoch=`/`ver=`/`rel=`
+attributes emits nothing), order with `rpmsort`, take the last line
+(`rpmsort` has no reverse flag, hence `tail`, also allowlisted), and
+strip the `kernel-<epoch>:` prefix with `grep -o` so what is left
+is the `ver-rel` the version cells hold:
+
+```
+curl -fsSL "${base}repodata/<hash>-primary.xml.gz" | zcat | grep -A2 '<name>kernel</name>' | grep -o '<version [^>]*>' | jq -R -r 'capture("epoch=\"(?<e>[^\"]+)\"") + capture("ver=\"(?<v>[^\"]+)\"") + capture("rel=\"(?<r>[^\"]+)\"") | "kernel-\(.e):\(.v)-\(.r)"' | rpmsort | tail -1 | grep -o '[^:][^:]*$'
+```
+
+Take `<hash>-primary.xml.gz` from the `repomd.xml` href; AL2023's
+is the unhashed `repodata/primary.xml.gz`.
 
 - **Rocky** BaseOS: `https://dl.rockylinux.org/pub/rocky/<8|9|10>/BaseOS/x86_64/os`.
   Verdicts follow the Red Hat record: at seed all of Rocky 8 / 9 / 10 are
@@ -977,8 +1029,13 @@ accumulate every point release's kernel, so pick the numerically-highest
   `<base>repodata/updateinfo.xml.gz` (plain filename) and pipe it through
   `zcat` into `scripts/alas-cve` (below) for the ALAS id + fixed `kernel*`
   version; check **all** streams (AL2023
-  `kernel` 6.1, opt-in `kernel6.12`, `kernel6.18`), and read current versions
-  from `primary.xml.gz`.  All three AL2023 streams are in-window (as is
+  `kernel` 6.1, opt-in `kernel6.12`, `kernel6.18`), and read
+  current versions from `primary.xml.gz`, per stream, with the Rocky
+  highest-build recipe above (`jq`-built `kernel-<epoch>:<ver>-<rel>`
+  strings into `rpmsort`, never the raw element or `sort -V`; the
+  epoch matters here, AL2023 has bumped it) and the stream's name in
+  the `<name>` grep (`kernel`, `kernel6.12`, `kernel6.18`).
+  All three AL2023 streams are in-window (as is
   AL2's 4.14, though AL2 is untracked).  Mirror:
   `…/al2023/core/mirrors/latest/x86_64/mirror.list`.  (AL2 is EOL and
   untracked — no AL2 repodata pulls.)  **A CVE-grep miss can also mean

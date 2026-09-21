@@ -169,7 +169,10 @@ leave behind is the edited tracker (and its commit).
         and read the kernel fix_state + affected_release. At seed time Red
         Hat had published NO record (404). EL kernels all carry SCTP and are
         in-window — do NOT rate them Not affected. When an RHSA + fixed NVR
-        appears, Rocky rebuilds it; confirm via Rocky BaseOS repodata (zcat)
+        appears, Rocky rebuilds it; confirm via Rocky BaseOS repodata
+        (zcat; order kernel builds with rpmsort as jq-built
+        `kernel-epoch:ver-rel` strings, never the raw <version> element
+        or sort -V; recipe in CLAUDE.md)
         reaching that NVR, cross-check AlmaLinux via OSV
         https://api.osv.dev/v1/vulns/CVE-2026-64564.
       - Amazon: the ALAS signal is the repodata updateinfo.xml.gz (maps CVE
@@ -191,7 +194,8 @@ leave behind is the edited tracker (and its commit).
    else.
 
    zcat / gunzip ARE available to the headless run — use them for the
-   Packages.gz / repodata pulls — as are grep, sort, jq and tee;
+   Packages.gz / repodata pulls — as are grep, sort, rpmsort, tail,
+   jq, xq and tee;
    python3, awk, sed and cat are not allowlisted — if one of those is
    refused, don't retry it in another spelling. Pull only kernel
    versions and advisory state — the tracker records no other
