@@ -3,7 +3,7 @@ title: "SCTPhantom — SCTP ASCONF transport use-after-free"
 description: "Linux kernel SCTP ASCONF DEL-IP use-after-free (CVE-2026-64564, SCTPhantom) — remote-triggerable transport UAF, local privilege escalation and container-to-host escape — distro patch status tracker"
 layout: "single"
 date: 2026-08-10
-lastmod: 2026-09-21
+lastmod: 2026-09-22
 cover:
   image: "sctphantom-tracker.png"
   alt: "SCTPhantom — Linux kernel SCTP ASCONF transport use-after-free tracker"
@@ -133,7 +133,7 @@ is fixed.
 | Debian | 12 (6.12 opt-in) | 6.12.107-1~deb12u1 | 6.12.101-1~deb12u1 | 2026-08-15 | :white_check_mark: Fixed |
 | Proxmox VE | 9 (default) | 7.0.14-19-pve | 7.0.14-10 | 2026-08-06 | :white_check_mark: Fixed — cherry-pick |
 | Proxmox VE | 8 (default) | 6.8.12-43-pve | 6.8.12-41 | 2026-08-07 | :white_check_mark: Fixed — cherry-pick |
-| Proxmox VE | 8 (6.14 opt-in) | 6.14.11-9~bpo12+1 | — | — | :x: Vulnerable |
+| Proxmox VE | 8 (6.14 opt-in) | 6.14.11-9~bpo12+1 | — | — | :x: Vulnerable — EOL 2026-08 |
 | NixOS | master | 6.18.52 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
 | NixOS | release-26.05 | 6.18.52 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
 | NixOS | Unstable | 6.18.52 | 6.18.42 | 2026-08-04 | :white_check_mark: Fixed |
@@ -217,6 +217,9 @@ maintained series backport the SCTP fix (a
 series is the familiar Proxmox pattern: although the upstream 6.8 base is
 old, the Ubuntu-derived kernel carries SCTP and receives the cherry-pick, so
 a pre-fix Proxmox series cannot be assumed safe by base version alone.
+PVE 8 then reached end of life in **August 2026**, so its fixed 6.8 line
+is also its last: a host on it is patched for this bug but will get
+nothing further, and should upgrade to PVE 9.
 
 Both releases also still publish pre-GA preview kernel series that Proxmox
 abandoned before this disclosure and that never received the fix — PVE 9's
@@ -230,9 +233,10 @@ PVE 8 additionally offers `proxmox-kernel-6.14` as a `bookworm-backports`
 opt-in for users who want newer hardware support — distinct from PVE 9's
 abandoned preview series of the same number. It is **vulnerable**: its
 Ubuntu base (`Ubuntu-6.14.0-37.37`) predates Ubuntu's own fix, and Ubuntu's
-`linux-hwe-6.14` on noble is itself end-of-life, so no further Ubuntu-side
-rebase will bring the fix in either — only a direct Proxmox cherry-pick
-would close this row, and none has landed yet.
+`linux-hwe-6.14` on noble is itself end-of-life, so no Ubuntu-side rebase
+will bring the fix, and with PVE 8 past its own end of life no Proxmox
+cherry-pick is expected either. It is permanently **vulnerable**; a host
+booting it should upgrade to PVE 9.
 
 ### NixOS
 
@@ -577,6 +581,8 @@ readers never need it.
     (`ubuntu.com/security/cves/CVE-2026-64564.json`), `linux-hwe-6.14` on
     noble is `ignored` (end of life), so no Ubuntu-side rebase will bring
     the fix either.
+  - PVE 8 reached end of life in 2026-08 (Proxmox VE FAQ lifecycle
+    table, pve.proxmox.com/wiki/FAQ), after this tracker was seeded.
 - **NixOS** (`~/src/nixos/nixpkgs`): `linux_default = packages.linux_6_18`;
   every tracked ref resolves `6.18` at or above the `6.18.42` first-fixed
   release, so all seven rows are fixed. Each row's *Current kernel* is

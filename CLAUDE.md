@@ -795,7 +795,10 @@ moves.  Every PVE series carries SCTP and is in-window (the bug is ancient),
 so there is no "predates the bug" shortcut: each series needs the
 cherry-pick to be fixed.  At seed both maintained series carry it —
 `proxmox-kernel-7.0` (PVE 9) and `proxmox-kernel-6.8` (PVE 8), CVE-tagged
-2026-08-07.
+2026-08-07.  PVE 8 went EOL in 2026-08 while tracked; its rows (the fixed
+default and the vulnerable 6.14 opt-in) stay, frozen at their final
+verdicts.  Refresh their *Current kernel* as usual, but expect no
+movement and no cherry-pick for the opt-in.
 
 **Two sources — only one is authoritative for the version.** The
 *Current kernel* column is the `proxmox-kernel-<series>` build published
