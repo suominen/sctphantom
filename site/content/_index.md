@@ -118,10 +118,10 @@ is fixed.
 | Distribution | Release | Current kernel | First fixed | Fixed since | Status |
 |---|---|---|---|---|---|
 | Linux kernel | mainline | 7.3-rc4 | 7.2-rc5 | 2026-07-26 | :white_check_mark: Fixed — carries `9b2854f86f0b` |
-| Linux kernel | 7.2.x | 7.2.6 | 7.2 | 2026-08-16 | :white_check_mark: Fixed |
+| Linux kernel | 7.2.x | 7.2.7 | 7.2 | 2026-08-16 | :white_check_mark: Fixed |
 | Linux kernel | 7.1.x | 7.1.13 | 7.1.6 | 2026-08-03 | :white_check_mark: Fixed — EOL |
-| Linux kernel | 6.18.x | 6.18.52 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed — LTS |
-| Linux kernel | 6.12.x | 6.12.110 | 6.12.101 | 2026-08-03 | :white_check_mark: Fixed — LTS |
+| Linux kernel | 6.18.x | 6.18.53 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed — LTS |
+| Linux kernel | 6.12.x | 6.12.111 | 6.12.101 | 2026-08-03 | :white_check_mark: Fixed — LTS |
 | Linux kernel | 6.6.x | 6.6.157 | 6.6.148 | 2026-08-03 | :white_check_mark: Fixed — LTS |
 | Linux kernel | 6.1.x | 6.1.188 | 6.1.183 | 2026-08-19 | :white_check_mark: Fixed — LTS |
 | Linux kernel | 5.15.x | 5.15.221 | 5.15.216 | 2026-08-19 | :white_check_mark: Fixed — LTS |
@@ -131,7 +131,7 @@ is fixed.
 | Debian | 13 (trixie) | 6.12.107-1 | 6.12.101-1 | 2026-08-06 | :white_check_mark: Fixed — DSA-6415-1 |
 | Debian | 12 (bookworm) | 6.1.187-1 | 6.1.187-1 | 2026-09-08 | :white_check_mark: Fixed |
 | Debian | 12 (6.12 opt-in) | 6.12.107-1~deb12u1 | 6.12.101-1~deb12u1 | 2026-08-15 | :white_check_mark: Fixed |
-| Proxmox VE | 9 (default) | 7.0.14-17-pve | 7.0.14-10 | 2026-08-06 | :white_check_mark: Fixed — cherry-pick |
+| Proxmox VE | 9 (default) | 7.0.14-19-pve | 7.0.14-10 | 2026-08-06 | :white_check_mark: Fixed — cherry-pick |
 | Proxmox VE | 8 (default) | 6.8.12-43-pve | 6.8.12-41 | 2026-08-07 | :white_check_mark: Fixed — cherry-pick |
 | Proxmox VE | 8 (6.14 opt-in) | 6.14.11-9~bpo12+1 | — | — | :x: Vulnerable |
 | NixOS | master | 6.18.52 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
@@ -270,10 +270,14 @@ different kernel from `nixos-unstable`.
 RHEL-family kernels are long-lived forks that carry SCTP, so all three
 in-support lines — EL10 (6.12-based), EL9 (5.14-based), EL8 (4.18-based) —
 are in-window. Red Hat published a CVE assessment (VEX/CSAF record,
-initial release 2026-08-04) but has **not** shipped a fix — the record's
-only remediation is a module-blacklist workaround, with no `vendor_fix`
-entry or RHSA — so every stream is **vulnerable pending an advisory**.
-Default module posture
+initial release 2026-08-04) and shipped its first fix on 2026-09-21 via
+**RHSA-2026:69089** — but only for the RHEL **10.0 Extended Update
+Support (EUS)** stream (`kernel-6.12.0-55.105.1.el10_0`), a separate
+long-life minor-version product that Rocky does not rebuild. The
+default streams tracked here — EL8, EL9, and EL10's current 10.2 minor
+version — remain **vulnerable pending their own advisory**; the EUS fix
+is a leading indicator that one is coming, not a fix for any tracked
+row. Default module posture
 is uniform across the family: on all three releases `sctp.ko` is not in
 the base kernel packages but in **`kernel-modules-extra`**, and that
 package installs `/etc/modprobe.d/sctp-blacklist.conf` (`blacklist sctp`,
@@ -589,9 +593,13 @@ readers never need it.
   2026-08-03).
 - **Rocky / RHEL family**: Red Hat's CSAF/VEX record
   (`security.access.redhat.com/data/csaf/v2/vex/2026/cve-2026-64564.json`,
-  initial release 2026-08-04) lists 274 affected products across
-  EL6–EL10 and only a `workaround` remediation (module blacklist) — no
-  `vendor_fix` entry, so no RHSA yet. EL8/EL9/EL10 all carry
+  initial release 2026-08-04, current release 2026-09-21) now carries one
+  `vendor_fix` remediation alongside its `workaround`: **RHSA-2026:69089**
+  (date 2026-09-21), fixing `kernel-0:6.12.0-55.105.1.el10_0` for the
+  "Red Hat Enterprise Linux BaseOS EUS (v. 10.0)" product family (and its
+  AppStream/CRB/NFV/RT EUS siblings) only — `red_hat_enterprise_linux_10`
+  (the default, non-EUS EL10 line this tracker follows), and RHEL 8 and
+  9, remain `known_affected` with no `vendor_fix`. EL8/EL9/EL10 all carry
   SCTP and are in-window. Default module posture (verified on live
   Rocky hosts, corroborated from BaseOS `filelists.xml.gz`): on all of
   Rocky 8 / 9 / 10 `sctp.ko` ships in `kernel-modules-extra`, and every
