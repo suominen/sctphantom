@@ -86,7 +86,7 @@ follow `~/src/cve-tracker-template/LIFECYCLE.md` § "Retiring a tracker".
 ├── tests/                                    # helper tests: `make check`
 ├── systemd/                                  # user-level timer + service units
 │   ├── sctphantom-tracker-update.service        # runs scripts/auto-update
-│   └── sctphantom-tracker-update.timer          # twice daily
+│   └── sctphantom-tracker-update.timer          # daily
 ├── flake.nix, .envrc                         # Nix dev shell: hugo + go + git
 ├── Makefile                                  # `make build`, `make dist`, `make check`, `make banner`
 ├── LICENSE                                   # CC BY 4.0
@@ -527,9 +527,10 @@ systemctl --user daemon-reload
 systemctl --user enable --now sctphantom-tracker-update.timer
 ```
 
-The timer fires at `05,17:50` — staggered from the sibling trackers
-(CVE-2026-81642 `:05`, dirtyah6 `:20`, CVE-2025-39964 `:35` in the same
-hours; the rest fire in the `06,18` and `07,19` hours) so the shared
+The timer fires daily at `05:50` (mornings only: the one open axis,
+Rocky, moves slowly) — staggered from the sibling trackers
+(CVE-2026-81642 `:05`, dirtyah6 `:20`, CVE-2025-39964 `:35` in the `05`
+hour; the rest fire in the `06,18` and `07,19` hours) so the shared
 kernel clones are not fetched simultaneously.  Verify the live set with
 `systemctl --user list-timers | grep tracker` — this in-doc list has gone
 stale before.

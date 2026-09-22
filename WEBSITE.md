@@ -126,7 +126,7 @@ so no subsystem-tree swap was needed.
   unpatched 6.1 / 5.15 / 5.10 LTS lines, not old kernels being out of
   window.
 - **Automated maintenance:** a user-level systemd timer
-  (`systemd/sctphantom-tracker-update.timer`, twice daily) runs
+  (`systemd/sctphantom-tracker-update.timer`, daily) runs
   `scripts/auto-update`, which merges `origin/main` into a dedicated
   long-lived `auto-update` branch in a separate worktree and hands off to
   headless Claude with `scripts/auto-update-prompt.txt`.  The agent only
