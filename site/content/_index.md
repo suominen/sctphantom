@@ -3,7 +3,7 @@ title: "SCTPhantom — SCTP ASCONF transport use-after-free"
 description: "Linux kernel SCTP ASCONF DEL-IP use-after-free (CVE-2026-64564, SCTPhantom) — remote-triggerable transport UAF, local privilege escalation and container-to-host escape — distro patch status tracker"
 layout: "single"
 date: 2026-08-10
-lastmod: 2026-09-22
+lastmod: 2026-09-23
 cover:
   image: "sctphantom-tracker.png"
   alt: "SCTPhantom — Linux kernel SCTP ASCONF transport use-after-free tracker"
@@ -127,7 +127,7 @@ is fixed.
 | Linux kernel | 5.15.x | 5.15.221 | 5.15.216 | 2026-08-19 | :white_check_mark: Fixed — LTS |
 | Linux kernel | 5.10.x | 5.10.270 | 5.10.265 | 2026-08-19 | :white_check_mark: Fixed — LTS |
 | Debian | sid (unstable) | 7.2.6-1 | 7.1.6-1 | 2026-08-04 | :white_check_mark: Fixed |
-| Debian | forky (testing) | 7.1.13-1 | 7.1.6-1 | 2026-08-08 | :white_check_mark: Fixed |
+| Debian | forky (testing) | 7.2.6-1 | 7.1.6-1 | 2026-08-08 | :white_check_mark: Fixed |
 | Debian | 13 (trixie) | 6.12.107-1 | 6.12.101-1 | 2026-08-06 | :white_check_mark: Fixed — DSA-6415-1 |
 | Debian | 12 (bookworm) | 6.1.187-1 | 6.1.187-1 | 2026-09-08 | :white_check_mark: Fixed |
 | Debian | 12 (6.12 opt-in) | 6.12.107-1~deb12u1 | 6.12.101-1~deb12u1 | 2026-08-15 | :white_check_mark: Fixed |
@@ -274,18 +274,24 @@ different kernel from `nixos-unstable`.
 RHEL-family kernels are long-lived forks that carry SCTP, so all three
 in-support lines — EL10 (6.12-based), EL9 (5.14-based), EL8 (4.18-based) —
 are in-window. Red Hat published a CVE assessment (VEX/CSAF record,
-initial release 2026-08-04) and has since shipped fixes for four
+initial release 2026-08-04) and has since shipped fixes for six
 long-life minor-version streams, none of them a default RHEL8/9/10
 stream Rocky rebuilds: **RHSA-2026:69089** (RHEL **10.0 Extended Update
-Support (EUS)**, `kernel-6.12.0-55.105.1.el10_0`), **RHSA-2026:69837**
+Support (EUS)**, `kernel-6.12.0-55.105.1.el10_0`), **RHSA-2026:69908**
+(RHEL **9.4 E4S**, `kernel-5.14.0-427.151.1.el9_4`), **RHSA-2026:69837**
 (RHEL **8.8 TUS/E4S**, `kernel-4.18.0-477.168.1.el8_8`),
 **RHSA-2026:69874** (RHEL **8.4 EUS/AUS**,
-`kernel-4.18.0-305.208.1.el8_4`), and **RHSA-2026:69906** (RHEL **8.6
-EUS/AUS**, `kernel-4.18.0-372.216.1.el8_6`). The
+`kernel-4.18.0-305.208.1.el8_4`), **RHSA-2026:69906** (RHEL **8.6
+EUS/AUS**, `kernel-4.18.0-372.216.1.el8_6`), and **RHSA-2026:70290**
+together with **RHSA-2026:70308** (RHEL **7 Extended Life Support
+(ELS)**, `kernel-3.10.0-1160.162.1.el7` and
+`kernel-rt-3.10.0-1160.162.1.rt56.1314.el7` — even a kernel this old
+still carries SCTP and needed the same cherry-pick, underscoring that no
+in-support line predates the bug). The
 default streams tracked here — EL8, EL9, and EL10's current 10.2 minor
 version — remain **vulnerable pending their own advisory**; the growing
-set of EUS/AUS/TUS fixes is a leading indicator that one is coming, not
-a fix for any tracked row. Default module posture
+set of EUS/AUS/TUS/ELS fixes is a leading indicator that one is coming,
+not a fix for any tracked row. Default module posture
 is uniform across the family: on all three releases `sctp.ko` is not in
 the base kernel packages but in **`kernel-modules-extra`**, and that
 package installs `/etc/modprobe.d/sctp-blacklist.conf` (`blacklist sctp`,
@@ -604,13 +610,17 @@ readers never need it.
 - **Rocky / RHEL family**: Red Hat's CSAF/VEX record
   (`security.access.redhat.com/data/csaf/v2/vex/2026/cve-2026-64564.json`,
   initial release 2026-08-04, current release 2026-09-22) now carries
-  four `vendor_fix` remediations alongside its `workaround`, all
+  six `vendor_fix` remediations alongside its `workaround`, all
   long-life minor-version products Rocky does not rebuild:
   **RHSA-2026:69089** (`kernel-0:6.12.0-55.105.1.el10_0`, RHEL 10.0
-  EUS), **RHSA-2026:69837** (`kernel-0:4.18.0-477.168.1.el8_8`, RHEL 8.8
+  EUS), **RHSA-2026:69908** (`kernel-0:5.14.0-427.151.1.el9_4`, RHEL 9.4
+  E4S), **RHSA-2026:69837** (`kernel-0:4.18.0-477.168.1.el8_8`, RHEL 8.8
   TUS/E4S), **RHSA-2026:69874** (`kernel-0:4.18.0-305.208.1.el8_4`, RHEL
-  8.4 EUS/AUS), and **RHSA-2026:69906**
-  (`kernel-0:4.18.0-372.216.1.el8_6`, RHEL 8.6 EUS/AUS) —
+  8.4 EUS/AUS), **RHSA-2026:69906**
+  (`kernel-0:4.18.0-372.216.1.el8_6`, RHEL 8.6 EUS/AUS), and
+  **RHSA-2026:70290** / **RHSA-2026:70308**
+  (`kernel-0:3.10.0-1160.162.1.el7` /
+  `kernel-rt-0:3.10.0-1160.162.1.rt56.1314.el7`, RHEL 7 ELS) —
   `red_hat_enterprise_linux_8`, `_9`, and `_10` (the default, non-EUS
   lines this tracker follows) remain `known_affected` with no
   `vendor_fix`. EL8/EL9/EL10 all carry
