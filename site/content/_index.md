@@ -500,36 +500,45 @@ readers never need it.
     move to bookworm or newer.
   - The remaining rows' *Current kernel* values come from ftp-master
     madison and the tracker's `<suite>-security` `repositories` entries.
-- **Proxmox VE** (`~/src/proxmox/pve-kernel`): patch
-  `…-sctp-don-t-free-the-ASCONF-s-own-transport-in-DEL-IP.patch` present as
-  `0059-…` in the `proxmox-kernel-7.0` tree (branch `master`) and `0034-…`
-  in `proxmox-kernel-6.8` (branch `bookworm-6.8`). Per `debian/changelog`,
-  the fix first ships in **`7.0.14-10`** (2026-08-06 20:53) for PVE 9 — its
-  `7.0.14-11` (2026-08-07) is the *next* release, fixing the unrelated
-  CVE-2026-68480 — and in **`6.8.12-41`** (2026-08-07 00:52) for PVE 8. The
-  CVE identifiers were tagged in `38fa3e0` / `6daa7f0` (2026-08-07). The
-  `pve-no-subscription` `Packages.gz` indexes publish both first-fixed
-  builds (`proxmox-kernel-7.0.14-10-pve` in trixie,
-  `proxmox-kernel-6.8.12-41-pve` in bookworm); the rows' *Current
-  kernel* builds are read from the same indexes.
+- **Proxmox VE** (via `~/src/proxmox/pve-kernel` patches and
+  `debian/changelog`, and the `pve-no-subscription` `Packages.gz`
+  indexes, which also give the rows' *Current kernel* builds):
   - `proxmox-default-kernel`'s `Depends` confirms the live defaults:
     `7.0` on trixie (PVE 9), `6.8` on bookworm (PVE 8).
-  - Pre-GA preview series still published but no longer updated, none
-    carrying the fix: PVE 9's `proxmox-kernel-6.14` (branch
-    `trixie-6.14`, last build `6.14.11-9`, 2026-05-15) and
-    `proxmox-kernel-6.17` (branch `trixie-6.17`, last build `6.17.13-21`,
-    2026-07-28 — no commits since); PVE 8's `proxmox-kernel-6.2` (branch
-    `bookworm-6.2`, last build `6.2.16-20`) and `proxmox-kernel-6.5`
-    (branch `bookworm-6.5`, last build `6.5.13-6`). All four predate this
-    disclosure.
-  - PVE 8's `proxmox-kernel-6.14` opt-in (branch `bookworm-6.14`,
-    package source `bookworm-backports`) is a distinct, still-published
-    series — not the abandoned PVE 9 preview of the same number. Its
-    changelog's newest entry is `6.14.11-9~bpo12+1` (2026-05-15), with no
-    SCTP cherry-pick and no commits since; per Ubuntu's CVE tracker
-    (`ubuntu.com/security/cves/CVE-2026-64564.json`), `linux-hwe-6.14` on
-    noble is `ignored` (end of life), so no Ubuntu-side rebase will bring
-    the fix either.
+  - PVE 9 `proxmox-kernel-7.0` (branch `master`): patch
+    `0059-…-sctp-don-t-free-the-ASCONF-s-own-transport-in-DEL-IP.patch`;
+    the fix first ships in **`7.0.14-10`** (2026-08-06 20:53), and the
+    CVE identifier was tagged in `6daa7f0` (2026-08-07).
+  - PVE 9's next release, `7.0.14-11` (2026-08-07), fixes the unrelated
+    CVE-2026-68480.
+  - `pve-no-subscription` (trixie) publishes the first-fixed
+    `proxmox-kernel-7.0.14-10-pve`.
+  - PVE 9 `proxmox-kernel-6.17` (branch `trixie-6.17`): pre-GA preview,
+    still published but no longer updated; last build `6.17.13-21`
+    (2026-07-28), no commits since, no fix. Predates this disclosure.
+  - PVE 9 `proxmox-kernel-6.14` (branch `trixie-6.14`): pre-GA preview,
+    still published but no longer updated; last build `6.14.11-9`
+    (2026-05-15), no fix. Predates this disclosure.
+  - PVE 8 `proxmox-kernel-6.8` (branch `bookworm-6.8`): patch
+    `0034-…-sctp-don-t-free-the-ASCONF-s-own-transport-in-DEL-IP.patch`;
+    the fix first ships in **`6.8.12-41`** (2026-08-07 00:52), and the
+    CVE identifier was tagged in `38fa3e0` (2026-08-07).
+  - `pve-no-subscription` (bookworm) publishes the first-fixed
+    `proxmox-kernel-6.8.12-41-pve`.
+  - PVE 8 `proxmox-kernel-6.14` opt-in (branch `bookworm-6.14`, package
+    source `bookworm-backports`): a distinct, still-published series,
+    not the abandoned PVE 9 preview of the same number. Its changelog's
+    newest entry is `6.14.11-9~bpo12+1` (2026-05-15), with no SCTP
+    cherry-pick and no commits since.
+  - Ubuntu's CVE tracker (`ubuntu.com/security/cves/CVE-2026-64564.json`)
+    marks `linux-hwe-6.14` on noble `ignored` (end of life), so no
+    Ubuntu-side rebase will bring the fix to the 6.14 opt-in.
+  - PVE 8 `proxmox-kernel-6.5` (branch `bookworm-6.5`): pre-GA preview,
+    still published but no longer updated; last build `6.5.13-6`, no
+    fix. Predates this disclosure.
+  - PVE 8 `proxmox-kernel-6.2` (branch `bookworm-6.2`): pre-GA preview,
+    still published but no longer updated; last build `6.2.16-20`, no
+    fix. Predates this disclosure.
   - PVE 8 reached end of life in 2026-08 (Proxmox VE FAQ lifecycle
     table, pve.proxmox.com/wiki/FAQ), after this tracker was seeded.
 - **NixOS** (via `~/src/nixos/nixpkgs`; branch tips for `master` /
