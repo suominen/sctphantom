@@ -532,20 +532,22 @@ readers never need it.
     the fix either.
   - PVE 8 reached end of life in 2026-08 (Proxmox VE FAQ lifecycle
     table, pve.proxmox.com/wiki/FAQ), after this tracker was seeded.
-- **NixOS** (`~/src/nixos/nixpkgs`): `linux_default = packages.linux_6_18`;
-  every tracked ref resolves `6.18` at or above the `6.18.42` first-fixed
-  release, so all seven rows are fixed. Each row's *Current kernel* is
-  the `6.18` version `kernels-org.json` resolves at that ref (branch
-  tips for `master` / `release-26.05`, channel `git-revision` pins for
-  the other five). At the same refs, `linux_6_1` / `linux_5_15` /
-  `linux_5_10` also resolve at or above their branches' first-fixed
-  releases.
-  *Fixed since*: the branch rows use the commit date of the 6.18.42 bump
-  (`b658e06342e8` on master, `33565191d37a` on release-26.05, both
-  2026-08-03); the channel rows use `scripts/nixos-first-shipped`
-  (nixos-unstable 2026-08-04, nixos-unstable-small 2026-08-03,
-  nixpkgs-unstable 2026-08-08, nixos-26.05 2026-08-05, nixos-26.05-small
-  2026-08-03).
+- **NixOS** (via `~/src/nixos/nixpkgs`; branch tips for `master` /
+  `release-26.05`, channel `git-revision` pins for the other five refs):
+  - `linux_default = packages.linux_6_18` at every tracked ref.
+  - Every tracked ref resolves `6.18` at or above the `6.18.42`
+    first-fixed release.
+  - Each row's *Current kernel* is the `6.18` version `kernels-org.json`
+    resolves at that ref.
+  - `linux_6_1` / `linux_5_15` / `linux_5_10` also resolve at or above
+    their branches' first-fixed releases at the same refs.
+  - *Fixed since* for the branch rows is the commit date of the 6.18.42
+    bump: `b658e06342e8` on master and `33565191d37a` on release-26.05,
+    both 2026-08-03.
+  - *Fixed since* for the channel rows comes from
+    `scripts/nixos-first-shipped`: nixos-unstable 2026-08-04,
+    nixos-unstable-small 2026-08-03, nixpkgs-unstable 2026-08-08,
+    nixos-26.05 2026-08-05, nixos-26.05-small 2026-08-03.
 - **Rocky / RHEL family** (via Red Hat's CSAF/VEX record
   `security.access.redhat.com/data/csaf/v2/vex/2026/cve-2026-64564.json`,
   initial release 2026-08-04, current release 2026-09-24; Rocky BaseOS
@@ -610,18 +612,18 @@ readers never need it.
   - OSV lists the AlmaLinux rebuilds **ALSA-2026:71213** (EL8,
     `4.18.0-553.167.1.el8_10`), **ALSA-2026:71232** (EL9,
     `5.14.0-687.51.1.el9_8`), and **ALSA-2026:71016** (EL8 `kernel-rt`).
-- **Amazon Linux**: the AL2023 `updateinfo.xml.gz` now carries three
-  references to CVE-2026-64564: **ALAS2023-2026-2107** (issued
-  2026-08-31, updated 2026-09-04) fixes the default `kernel` stream at
-  `6.1.182-227.379.amzn2023`; **ALAS2023-2026-2106** (issued 2026-08-31,
-  updated 2026-09-09) fixes `kernel6.18` at `6.18.44-99.149.amzn2023`;
-  **ALAS2023-2026-2110** (issued 2026-08-31) fixes `kernel6.12` at
-  `6.12.103-127.188.amzn2023`. All three advisories carry the same
-  2026-08-31 issue date as first seen in this run; -2106 and -2107 were
-  absent from the polled `updateinfo.xml.gz` on prior runs despite that
-  date, the same mirror-snapshot lag noted for OVSwrap's
-  CVE-2026-64531. The per-stream *Current kernel* values are read from
-  `primary.xml.gz`.
+- **Amazon Linux** (via the AL2023 `updateinfo.xml.gz`, parsed with
+  `scripts/alas-cve`; *Current kernel* per stream from
+  `primary.xml.gz`):
+  - **ALAS2023-2026-2107** (issued 2026-08-31, updated 2026-09-04) fixes
+    the default `kernel` stream at `6.1.182-227.379.amzn2023`.
+  - **ALAS2023-2026-2110** (issued 2026-08-31) fixes `kernel6.12` at
+    `6.12.103-127.188.amzn2023`.
+  - **ALAS2023-2026-2106** (issued 2026-08-31, updated 2026-09-09) fixes
+    `kernel6.18` at `6.18.44-99.149.amzn2023`.
+  - ALAS2023-2026-2106 and -2107 reached the published `updateinfo.xml.gz`
+    only weeks after their issue date, through the repodata's
+    mirror-snapshot lag.
 {{< /details >}}
 
 ## References
