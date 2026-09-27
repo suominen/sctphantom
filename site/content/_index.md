@@ -546,64 +546,70 @@ readers never need it.
   (nixos-unstable 2026-08-04, nixos-unstable-small 2026-08-03,
   nixpkgs-unstable 2026-08-08, nixos-26.05 2026-08-05, nixos-26.05-small
   2026-08-03).
-- **Rocky / RHEL family**: Red Hat's CSAF/VEX record
-  (`security.access.redhat.com/data/csaf/v2/vex/2026/cve-2026-64564.json`,
-  initial release 2026-08-04, current release 2026-09-24) now carries
-  fourteen `vendor_fix` remediations alongside its `workaround`:
-  **RHSA-2026:69089** (`kernel-0:6.12.0-55.105.1.el10_0`, RHEL 10.0
-  EUS), **RHSA-2026:71233** (issued 2026-09-24, `kernel-0:6.12.0-211.59.1.el10_2`,
-  product id `BaseOS-10.2.Z` — confirmed via the product tree as
-  `Red Hat Enterprise Linux BaseOS (v. 10)`, i.e. EL10's current default
-  minor and the same `el10_2` build family Rocky 10's now-fixed build
-  tracks),
-  **RHSA-2026:69908** (`kernel-0:5.14.0-427.151.1.el9_4`, RHEL 9.4
-  E4S), **RHSA-2026:70482** / **RHSA-2026:70483**
-  (`kernel-0:5.14.0-284.193.1.el9_2` / `kernel-rt`, RHEL 9.2 E4S),
-  **RHSA-2026:70484** (`kernel-0:5.14.0-570.142.1.el9_6`, RHEL 9.6 EUS),
-  **RHSA-2026:71232** (issued 2026-09-24, `kernel-0:5.14.0-687.51.1.el9_8`,
-  product id `BaseOS-9.8.0.Z.MAIN.EUS` — confirmed via the product tree
-  as `Red Hat Enterprise Linux BaseOS (v. 9)`, i.e. EL9's current default
-  minor and the same `el9_8` build family Rocky 9 tracks),
-  **RHSA-2026:69837** (`kernel-0:4.18.0-477.168.1.el8_8`, RHEL 8.8
-  TUS/E4S), **RHSA-2026:69874** (`kernel-0:4.18.0-305.208.1.el8_4`, RHEL
-  8.4 EUS/AUS), **RHSA-2026:69906**
-  (`kernel-0:4.18.0-372.216.1.el8_6`, RHEL 8.6 EUS/AUS),
-  **RHSA-2026:71213** / **RHSA-2026:71016**
-  (`kernel-0:4.18.0-553.167.1.el8_10` / `kernel-rt`, RHEL 8.10, product
-  id `BaseOS-8.10.0.Z.MAIN.EUS` — confirmed via the product tree as
-  `Red Hat Enterprise Linux BaseOS (v. 8)`, i.e. EL8's current default
-  minor and the same `el8_10` build family Rocky 8 tracks), and
-  **RHSA-2026:70290** / **RHSA-2026:70308**
-  (`kernel-0:3.10.0-1160.162.1.el7` /
-  `kernel-rt-0:3.10.0-1160.162.1.rt56.1314.el7`, RHEL 7 ELS). Every
-  EL8/EL9/EL10 default minor Rocky tracks now has a `vendor_fix`, so no
-  product remains `known_affected` in this record except RHEL 6
-  (untracked) and RHEL 9's `kernel-rt` subpackage. EL8/EL9/EL10 all
-  carry SCTP and are in-window. Default module posture
-  (verified on live Rocky hosts, corroborated from BaseOS
-  `filelists.xml.gz`): on all of Rocky 8 / 9 / 10 `sctp.ko` ships in
-  `kernel-modules-extra`, and every build of that package also installs
-  `/etc/modprobe.d/sctp-blacklist.conf` (`blacklist sctp`), suppressing
-  autoload — earlier entries here misread this as EL10-only. The Rocky
-  rows' *Current kernel* NVRs are read from BaseOS repodata
-  (`primary.xml.gz`, highest `rel`). EL9, EL8, and now EL10 have each
-  rebuilt past their RHSA NVRs: the positive changelog cross-check (BaseOS
-  `*-other.xml.gz`, `xq` query for a `kernel` changelog entry naming
-  CVE-2026-64564) confirms the fix in EL9's `5.14.0-687.51.1.el9_8`
-  (matching RHSA-2026:71232's NVR exactly, first seen in the mirror
-  `Packages/k/` listing 2026-09-25), in EL8's
-  `4.18.0-553.168.1.el8_10` (Rocky skipped RHSA-2026:71213's exact
-  `553.167.1.el8_10` NVR and shipped the next build instead, first seen
-  2026-09-24), and in EL10's `6.12.0-211.60.1.el10_2` (Rocky likewise
-  skipped RHSA-2026:71233's exact `211.59.1.el10_2` NVR and shipped the
-  next build instead, first seen in the mirror `Packages/k/` listing
-  2026-09-25) — all three ahead of Rocky's own RLSA. Rocky's BaseOS
-  `updateinfo.xml.gz` (parsed as XML) names the CVE only in
-  **RLSA-2026:71232** (EL9, issued 2026-09-25, `5.14.0-687.51.1.el9_8`);
-  EL8 and EL10 carry no RLSA for it. OSV lists the AlmaLinux rebuilds
-  **ALSA-2026:71213** (EL8, `4.18.0-553.167.1.el8_10`),
-  **ALSA-2026:71232** (EL9, `5.14.0-687.51.1.el9_8`), and
-  **ALSA-2026:71016** (EL8 `kernel-rt`).
+- **Rocky / RHEL family** (via Red Hat's CSAF/VEX record
+  `security.access.redhat.com/data/csaf/v2/vex/2026/cve-2026-64564.json`,
+  initial release 2026-08-04, current release 2026-09-24; Rocky BaseOS
+  repodata; OSV):
+  - EL10, EL9 and EL8 all carry SCTP and are in-window.
+  - The record carries fourteen `vendor_fix` remediations alongside its
+    `workaround`, listed below by stream.
+  - **RHSA-2026:71233** (issued 2026-09-24): RHEL 10.2,
+    `kernel-0:6.12.0-211.59.1.el10_2`. Product `BaseOS-10.2.Z` resolves
+    in the product tree to `Red Hat Enterprise Linux BaseOS (v. 10)` —
+    EL10's current minor, the `el10_2` build family Rocky 10 ships.
+  - **RHSA-2026:69089**: RHEL 10.0 EUS,
+    `kernel-0:6.12.0-55.105.1.el10_0`.
+  - **RHSA-2026:71232** (issued 2026-09-24): RHEL 9.8,
+    `kernel-0:5.14.0-687.51.1.el9_8`. Product `BaseOS-9.8.0.Z.MAIN.EUS`
+    resolves to `Red Hat Enterprise Linux BaseOS (v. 9)` — EL9's current
+    minor, the `el9_8` build family Rocky 9 ships.
+  - **RHSA-2026:70484**: RHEL 9.6 EUS, `kernel-0:5.14.0-570.142.1.el9_6`.
+  - **RHSA-2026:69908**: RHEL 9.4 E4S, `kernel-0:5.14.0-427.151.1.el9_4`.
+  - **RHSA-2026:70482** / **RHSA-2026:70483**: RHEL 9.2 E4S,
+    `kernel-0:5.14.0-284.193.1.el9_2` / `kernel-rt`.
+  - **RHSA-2026:71213** / **RHSA-2026:71016**: RHEL 8.10,
+    `kernel-0:4.18.0-553.167.1.el8_10` / `kernel-rt`. Product
+    `BaseOS-8.10.0.Z.MAIN.EUS` resolves to `Red Hat Enterprise Linux
+    BaseOS (v. 8)` — EL8's current minor, the `el8_10` build family
+    Rocky 8 ships.
+  - **RHSA-2026:69837**: RHEL 8.8 TUS/E4S,
+    `kernel-0:4.18.0-477.168.1.el8_8`.
+  - **RHSA-2026:69906**: RHEL 8.6 EUS/AUS,
+    `kernel-0:4.18.0-372.216.1.el8_6`.
+  - **RHSA-2026:69874**: RHEL 8.4 EUS/AUS,
+    `kernel-0:4.18.0-305.208.1.el8_4`.
+  - **RHSA-2026:70290** / **RHSA-2026:70308**: RHEL 7 ELS,
+    `kernel-0:3.10.0-1160.162.1.el7` /
+    `kernel-rt-0:3.10.0-1160.162.1.rt56.1314.el7`.
+  - `known_affected` lists only RHEL 6 (untracked) and RHEL 9's
+    `kernel-rt`. The latter is a catch-all entry: the RHEL 9.4, 9.6 and
+    9.8 kernel advisories above (and RHEL 10's) also list the RT and NFV
+    products among their `vendor_fix` product IDs.
+  - Module posture (verified on live Rocky hosts, corroborated from
+    BaseOS `filelists.xml.gz`): on Rocky 8, 9 and 10 `sctp.ko` ships in
+    `kernel-modules-extra`, and every build of that package installs
+    `/etc/modprobe.d/sctp-blacklist.conf` (`blacklist sctp`).
+  - The Rocky rows' *Current kernel* NVRs are read from BaseOS
+    `primary.xml.gz`, highest `rel`.
+  - EL10: the BaseOS `*-other.xml.gz` changelog cross-check (`xq` query
+    for a `kernel` entry naming CVE-2026-64564) confirms the fix in
+    `6.12.0-211.60.1.el10_2`, first seen in the mirror `Packages/k/`
+    listing 2026-09-25. Rocky skipped RHSA-2026:71233's exact
+    `211.59.1.el10_2` NVR and shipped the next build.
+  - EL9: the same cross-check confirms the fix in
+    `5.14.0-687.51.1.el9_8`, RHSA-2026:71232's exact NVR, first seen
+    2026-09-25.
+  - EL8: the same cross-check confirms the fix in
+    `4.18.0-553.168.1.el8_10`, first seen 2026-09-24. Rocky skipped
+    RHSA-2026:71213's exact `553.167.1.el8_10` NVR and shipped the next
+    build.
+  - All three Rocky builds shipped ahead of Rocky's own RLSA.
+  - Rocky's BaseOS `updateinfo.xml.gz` (parsed as XML) names the CVE only
+    in **RLSA-2026:71232** (EL9, issued 2026-09-25,
+    `5.14.0-687.51.1.el9_8`); EL8 and EL10 carry no RLSA for it.
+  - OSV lists the AlmaLinux rebuilds **ALSA-2026:71213** (EL8,
+    `4.18.0-553.167.1.el8_10`), **ALSA-2026:71232** (EL9,
+    `5.14.0-687.51.1.el9_8`), and **ALSA-2026:71016** (EL8 `kernel-rt`).
 - **Amazon Linux**: the AL2023 `updateinfo.xml.gz` now carries three
   references to CVE-2026-64564: **ALAS2023-2026-2107** (issued
   2026-08-31, updated 2026-09-04) fixes the default `kernel` stream at
