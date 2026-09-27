@@ -158,193 +158,110 @@ is fixed.
 
 ### Linux kernel
 
-The fix reached Linus in **v7.2-rc5** (tagged 2026-07-26) and the kernel
-CNA backported it across the maintained stable lines on **2026-08-03**:
-**6.6.148** (`fedeb4468987`), **6.12.101** (`74e8f3e7114f`), **6.18.42**
-(`85aca407c560`), and **7.1.6** (`d136b29bf91d`) — each the same fix by
-subject, confirmed present on its `linux-*.y` branch, with `finger_banner`
-current point releases at or above them.
+The fix reached mainline in **v7.2-rc5** and has been backported to every
+maintained stable and long-term line.
 
-The **6.1, 5.15, and 5.10** long-term lines picked up the backport later,
-on **2026-08-19**: **6.1.183** (`2b324ba3494a`), **5.15.216**
-(`a63afa1f9b12`), and **5.10.265** (`a9ce31be4cb1`) are each that branch's
-first-fixed release — confirmed present on its `linux-*.y` branch, with
-`finger_banner` current point releases at or above them. Every maintained
-upstream kernel line now carries the fix.
-
-**v7.2** itself was released on **2026-08-16**, promoting the former
-`mainline` (rc) line to its own maintained stable branch. Since the fix
-already landed by `v7.2-rc5`, the GA release carries it too, so the new
-**7.2.x** row is fixed from its first release.
-
-**7.1.x reached end of life at `7.1.13`**, per `kernel.org`'s
-`finger_banner` (superseded once `v7.2` became the newer of the two
-maintained non-LTS stable branches). It carries the fix since `7.1.6`,
-so the row's verdict is unaffected — its *Current kernel* simply stops
-moving.
+**7.1.x is end of life.** It carries the fix but gets no further updates
+— move to 7.2.x or a long-term line.
 
 ### Debian
 
-Debian's status splits on which upstream branch each suite tracks.
-**sid** and **forky** (testing, the future Debian 14) follow the 7.1
-line: sid has been **fixed** since the `7.1.6-1` upload (upstream 7.1.6
-is the branch's first-fixed release), and forky since that same version
-migrated to testing on 2026-08-08. **trixie** (Debian 13) shipped the
-fix as `6.12.101-1` — exactly the 6.12 branch's first-fixed release —
-so it is **fixed** too. **bookworm** rides the 6.1 line; it is now
-**fixed** as well, via a `bookworm-security` upload of `6.1.187-1`,
-well past the 6.1 branch's `6.1.183` first-fixed release.
+- **forky** is testing, the future Debian 14.
+- bookworm's opt-in 6.12 kernel is the `linux-6.12` package in
+  `bookworm-security`: trixie's 6.12 kernel rebuilt for bookworm.
 
-bookworm also offers an **opt-in newer kernel**: `linux-6.12`
-(bookworm-security) reached `6.12.101-1~deb12u1` on 2026-08-15 —
-exactly the 6.12 branch's first-fixed release — so it was **fixed**
-ahead of the bookworm default.
+**bullseye (Debian 11) left LTS support on 2026-08-31 without the fix.**
+Its 5.10-line default kernel and the withdrawn `linux-6.1` opt-in stay
+vulnerable, and no fix is coming — upgrade to bookworm or newer.
 
-**bullseye (Debian 11) reached the end of its LTS support window on
-2026-08-31** without ever receiving the fix — the Debian security
-tracker no longer carries an entry for it against this CVE, and its
-`linux-6.1` opt-in backport package has been withdrawn entirely. Both
-its 5.10-line default kernel and the former 6.1-line opt-in are
-permanently **vulnerable**: no further update is coming through the
-standard LTS. A host still on bullseye should upgrade to bookworm or
-newer.
-
-SCTP itself is not built into Debian's kernel image but shipped as the
-`sctp` module, autoloaded on first use of an `AF_INET`/`IPPROTO_SCTP`
-socket; it is not blacklisted by default, so a host running any SCTP
-service loads the vulnerable code.
+Debian ships SCTP as the `sctp` module, autoloaded on first use of an
+SCTP socket and not blacklisted, so any host running an SCTP service
+loads the vulnerable code.
 
 ### Proxmox VE
 
-Proxmox ships its own kernels, so Debian's status does not carry over. Both
-maintained series backport the SCTP fix (a
-`…-sctp-don-t-free-the-ASCONF-s-own-transport-in-DEL-IP.patch`): **PVE 9's
-`proxmox-kernel-7.0`** first carries it in **`7.0.14-10`** (2026-08-06), and
-**PVE 8's `proxmox-kernel-6.8`** in **`6.8.12-41`** (2026-08-07). The 6.8
-series is the familiar Proxmox pattern: although the upstream 6.8 base is
-old, the Ubuntu-derived kernel carries SCTP and receives the cherry-pick, so
-a pre-fix Proxmox series cannot be assumed safe by base version alone.
-PVE 8 then reached end of life in **August 2026**, so its fixed 6.8 line
-is also its last: a host on it is patched for this bug but will get
-nothing further, and should upgrade to PVE 9.
+Proxmox ships its own Ubuntu-derived kernels, so Debian's status does not
+carry over. The default kernels — PVE 9's `proxmox-kernel-7.0` and PVE 8's
+`proxmox-kernel-6.8` — carry a cherry-picked fix.
 
-Both releases also still publish pre-GA preview kernel series that Proxmox
-abandoned before this disclosure and that never received the fix — PVE 9's
-`proxmox-kernel-6.14` and `proxmox-kernel-6.17`, and PVE 8's
-`proxmox-kernel-6.2` and `proxmox-kernel-6.5`. No fix is coming for any of
-them: a host still booting one of these preview kernels stays vulnerable
-until it switches to its release's current default kernel, which carries
-the fix.
-
-PVE 8 additionally offers `proxmox-kernel-6.14` as a `bookworm-backports`
-opt-in for users who want newer hardware support — distinct from PVE 9's
-abandoned preview series of the same number. It is **vulnerable**: its
-Ubuntu base (`Ubuntu-6.14.0-37.37`) predates Ubuntu's own fix, and Ubuntu's
-`linux-hwe-6.14` on noble is itself end-of-life, so no Ubuntu-side rebase
-will bring the fix, and with PVE 8 past its own end of life no Proxmox
-cherry-pick is expected either. It is permanently **vulnerable**; a host
-booting it should upgrade to PVE 9.
+- **PVE 8 reached end of life in August 2026.** Its 6.8 kernel is fixed
+  for this bug but gets nothing further — upgrade to PVE 9.
+- **PVE 8's `proxmox-kernel-6.14` opt-in** (from `bookworm-backports`,
+  distinct from PVE 9's preview series of the same number) stays
+  vulnerable: its Ubuntu base, `linux-hwe-6.14`, is itself end-of-life,
+  and with PVE 8 past its own end of life no Proxmox fix is expected
+  either. Upgrade to PVE 9.
+- **Abandoned preview series** that Proxmox still publishes — PVE 9's
+  `proxmox-kernel-6.14` and `proxmox-kernel-6.17`, PVE 8's
+  `proxmox-kernel-6.2` and `proxmox-kernel-6.5` — never got the fix. A
+  host booting one should switch to its release's default kernel.
 
 ### NixOS
 
-Every tracked ref's default `linuxPackages` is `linux_6_18`, at or above
-the 6.18 branch's `6.18.42` first-fixed release, so every tracked ref is
-**fixed**; they differ only in which point release each has reached. Kernel
-updates land on nixpkgs `master` first, and each channel publishes them
-once its Hydra jobset passes. A channel can therefore sit a few days behind
-`master`, and an unstable channel is not necessarily ahead of a release
-channel. The `-small` channels (`nixos-unstable-small`, `nixos-26.05-small`)
-are gated on a reduced jobset and pick up kernel updates fastest. Every
-upstream-maintained series now carries the fix, and nixpkgs currently pins
-`linux_6_1` / `linux_5_15` / `linux_5_10` at or above their first-fixed
-releases too, so a host overriding the default to one of them is fixed as
-well, as long as it tracks a ref current enough to have picked up that
-bump.
+Every tracked ref's default `linuxPackages` is `linux_6_18`, which carries
+the fix. nixpkgs also pins `linux_6_1`, `linux_5_15` and `linux_5_10` at
+fixed releases, so a host overriding the default is fixed too, as long as
+it tracks a ref current enough to have picked up that bump.
 
-The `master` and `release-26.05` rows are the git branches the fix lands
-on. They are not Hydra-gated, so they carry a kernel bump from the moment
-the commit lands — typically a day or more before a channel republishes it,
-which is what the *Fixed since* dates down the group show. They are
-development branches, not deployment targets.
+Kernel updates land on nixpkgs `master` first and reach each channel once
+its Hydra jobset passes, so a channel can sit a few days behind `master`.
+The `-small` channels (`nixos-unstable-small`, `nixos-26.05-small`) run a
+reduced jobset and pick up kernel updates fastest.
 
-Flake inputs map onto these directly.
-`github:NixOS/nixpkgs/nixos-unstable` tracks the `nixos-unstable` channel —
-the GitHub channel branches are updated to exactly the published channel
-pins — and a bare `github:NixOS/nixpkgs` with no ref follows `master`. A
-bare `nixpkgs` registry input resolves by default to `nixpkgs-unstable`,
-which is a separate channel aimed at Nix users on other operating systems
-rather than at NixOS, so it is not gated on the NixOS tests and can hold a
-different kernel from `nixos-unstable`.
+Which ref a flake input follows:
+
+- `github:NixOS/nixpkgs/nixos-unstable` follows *Unstable* — the GitHub
+  channel branches are updated to exactly the published channel pins.
+- A bare `github:NixOS/nixpkgs` with no ref follows `master`, and
+  `github:NixOS/nixpkgs/release-26.05` follows that branch. Both are
+  ungated development branches — they carry a kernel bump as soon as it
+  lands, days before a channel publishes it.
+- A bare `nixpkgs` registry input resolves by default to
+  `nixpkgs-unstable` (*Unstable (nixpkgs)*): a separate channel aimed at
+  Nix on other operating systems, not gated on the NixOS tests.
 
 ### Rocky Linux / RHEL family
 
-RHEL-family kernels are long-lived forks that carry SCTP, so all three
-in-support lines — EL10 (6.12-based), EL9 (5.14-based), EL8 (4.18-based) —
-are in-window. Red Hat published a CVE assessment (VEX/CSAF record,
-initial release 2026-08-04) and has now shipped fixes for eleven kernel
-streams, including both EL9 and EL10's current default minors (three of
-the eleven — 9.2 E4S, 8.10, and 7 ELS — with a companion `kernel-rt`
-advisory): **RHSA-2026:69089** (RHEL **10.0 Extended Update Support
-(EUS)**, `kernel-6.12.0-55.105.1.el10_0`), **RHSA-2026:71233** (RHEL
-**10.2**, EL10's current default, `kernel-6.12.0-211.59.1.el10_2`),
-**RHSA-2026:69908** (RHEL **9.4 E4S**, `kernel-5.14.0-427.151.1.el9_4`),
-**RHSA-2026:70482**/**RHSA-2026:70483** (RHEL **9.2 E4S**,
-`kernel-5.14.0-284.193.1.el9_2` + `kernel-rt`), **RHSA-2026:70484** (RHEL
-**9.6 EUS**, `kernel-5.14.0-570.142.1.el9_6`), **RHSA-2026:71232** (RHEL
-**9.8**, EL9's current default, `kernel-5.14.0-687.51.1.el9_8`),
-**RHSA-2026:69837** (RHEL **8.8 TUS/E4S**,
-`kernel-4.18.0-477.168.1.el8_8`), **RHSA-2026:69874** (RHEL **8.4
-EUS/AUS**, `kernel-4.18.0-305.208.1.el8_4`), **RHSA-2026:69906** (RHEL
-**8.6 EUS/AUS**, `kernel-4.18.0-372.216.1.el8_6`), **RHSA-2026:71213**/
-**RHSA-2026:71016** (RHEL **8.10**, EL8's current default,
-`kernel-4.18.0-553.167.1.el8_10` + `kernel-rt`), and **RHSA-2026:70290**
-together with **RHSA-2026:70308** (RHEL **7 Extended Life Support
-(ELS)**, `kernel-3.10.0-1160.162.1.el7` and
-`kernel-rt-3.10.0-1160.162.1.rt56.1314.el7` — even a kernel this old
-still carries SCTP and needed the same cherry-pick, underscoring that no
-in-support line predates the bug). **Every EL8/9/10 default minor Rocky
-tracks now has an upstream fix available, and Rocky has now rebuilt past
-every one of the three RHSA NVRs.** EL9 rebuilt at `5.14.0-687.51.1.el9_8`
-(matching RHSA-2026:71232's NVR exactly), EL8 at
-`4.18.0-553.168.1.el8_10` (Rocky skipped RHSA-2026:71213's exact
-`553.167.1.el8_10` NVR and shipped the next build instead), and EL10 at
-`6.12.0-211.60.1.el10_2` (Rocky likewise skipped RHSA-2026:71233's exact
-`211.59.1.el10_2` NVR) — each confirmed by the shipped kernel's own
-`%changelog` naming CVE-2026-64564. Rocky's own advisory followed for EL9
-(RLSA-2026:71232, 2026-09-25); EL8 and EL10 have none yet, but their
-shipped kernels carry the fix all the same. Default module posture
-is uniform across the family: on all three releases `sctp.ko` is not in
-the base kernel packages but in **`kernel-modules-extra`**, and that
-package installs `/etc/modprobe.d/sctp-blacklist.conf` (`blacklist sctp`,
-plus `sctp_diag`) alongside it. So `sctp` never **autoloads** on a stock
-EL host — without `kernel-modules-extra` the module is absent entirely,
-and with it the blacklist suppresses autoload — though an explicit
+All three EL lines — EL10 (6.12-based), EL9 (5.14-based) and EL8
+(4.18-based) — carry SCTP and are in-window. Red Hat has shipped fixes for
+each line's current minor release and its extended-support streams, and
+Rocky has rebuilt all three. Rocky 8 and 10 have no RLSA for this CVE, but
+their shipped kernels' changelogs name it.
+
+Red Hat advisories by stream:
+
+- **RHEL 10:** 10.2 RHSA-2026:71233; 10.0 EUS RHSA-2026:69089.
+- **RHEL 9:** 9.8 RHSA-2026:71232; 9.6 EUS RHSA-2026:70484;
+  9.4 E4S RHSA-2026:69908;
+  9.2 E4S RHSA-2026:70482 (`kernel-rt` RHSA-2026:70483).
+- **RHEL 8:** 8.10 RHSA-2026:71213 (`kernel-rt` RHSA-2026:71016);
+  8.8 TUS/E4S RHSA-2026:69837; 8.6 EUS/AUS RHSA-2026:69906;
+  8.4 EUS/AUS RHSA-2026:69874.
+- **RHEL 7 ELS:** RHSA-2026:70290 (`kernel-rt` RHSA-2026:70308).
+
+**RHEL 9's `kernel-rt` real-time kernel has no fix yet** outside the 9.2
+E4S stream; RHEL 8.10's and RHEL 7's have one (above).
+
+**`sctp` does not autoload on a stock EL host.** On EL8, EL9 and EL10 alike
+`sctp.ko` ships only in `kernel-modules-extra`, which also installs
+`/etc/modprobe.d/sctp-blacklist.conf` (`blacklist sctp`). An explicit
 `modprobe sctp` still loads it wherever the package is installed, so this
-does not close the local vector. Rocky rebuilds RHEL's
-kernels unchanged, so its fixes track Red Hat's; AlmaLinux is typically
-the fastest rebuild and the leading indicator. Oracle Linux and
-CloudLinux track the RHEL determination.
+does not stop a local attacker.
+
+AlmaLinux shipped ALSA-2026:71213 (EL8, plus `kernel-rt` ALSA-2026:71016)
+and ALSA-2026:71232 (EL9). Oracle Linux and CloudLinux track Red Hat's
+fixes.
 
 ### Amazon Linux
 
-All three AL2023 kernel streams are now **fixed**. The `kernel6.12`
-opt-in shipped **ALAS2023-2026-2110** (2026-08-31), rebasing onto
-upstream **6.12.103** — past the 6.12 branch's `6.12.101` first fix.
-The default `kernel` (6.1 line) stream shipped **ALAS2023-2026-2107**
-(2026-08-31), fixing it at **6.1.182-227.379.amzn2023** — a build
-*below* the 6.1 branch's own `6.1.183` first-fixed release, another
-case of Amazon backporting into an already-shipped build rather than
-rebasing past the upstream threshold. The `kernel6.18` opt-in shipped
-**ALAS2023-2026-2106** (2026-08-31), fixing it at
-**6.18.44-99.149.amzn2023**, past the 6.18 branch's `6.18.42` first fix.
-Both ALAS2023-2026-2106 and -2107 took weeks to appear in the polled
-repodata after their issue date — the same mirror-snapshot lag this
-tracker has flagged before. The `kernel6.18` stream's build had already
-crossed its branch's first-fixed version before the advisory surfaced,
-but a version compare alone couldn't establish the fix had landed; the
-default stream's fixed build sits *below* its branch's first-fixed
-version, so no version threshold could ever have flagged it — only the
-ALAS itself confirms either backport.
+The three AL2023 streams are the default `kernel` package (6.1 line) and
+the opt-in `kernel6.12` and `kernel6.18` packages. The default stream's
+fixed build sits *below* upstream's 6.1.183 first fix — Amazon backported
+the fix — so judge an AL2023 kernel by its ALAS, not its version number.
+
+**Amazon Linux 2 reached end of support on 2026-06-30.** Its 4.14, 5.10
+and 5.15 kernels carry SCTP and stay vulnerable, with no fix coming —
+move to AL2023.
 
 ## Detection
 
