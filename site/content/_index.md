@@ -239,8 +239,9 @@ Red Hat advisories by stream:
   8.4 EUS/AUS RHSA-2026:69874.
 - **RHEL 7 ELS:** RHSA-2026:70290 (`kernel-rt` RHSA-2026:70308).
 
-**RHEL 9's `kernel-rt` real-time kernel has no fix yet** outside the 9.2
-E4S stream; RHEL 8.10's and RHEL 7's have one (above).
+On RHEL 9 and 10 the real-time kernel (`kernel-rt`) is fixed by the
+same advisories as the regular kernel; RHEL 9.2 E4S, 8 and 7 have separate
+`kernel-rt` advisories, listed with the kernel's.
 
 **`sctp` does not autoload on a stock EL host.** On EL8, EL9 and EL10 alike
 `sctp.ko` ships only in `kernel-modules-extra`, which also installs
@@ -249,8 +250,8 @@ E4S stream; RHEL 8.10's and RHEL 7's have one (above).
 does not stop a local attacker.
 
 AlmaLinux shipped ALSA-2026:71213 (EL8, plus `kernel-rt` ALSA-2026:71016)
-and ALSA-2026:71232 (EL9). Oracle Linux and CloudLinux track Red Hat's
-fixes.
+and ALSA-2026:71232 (EL9). CloudLinux and Oracle Linux's Red Hat Compatible
+Kernel get the fix as they rebuild Red Hat's advisories.
 
 ### Amazon Linux
 
