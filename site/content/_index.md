@@ -439,11 +439,14 @@ readers never need it.
   `finger_banner`.
 - **6.1.y / 5.15.y / 5.10.y backports** (fix cherry-picks confirmed by
   subject grep against `~/src/linux/stable`, each a new SHA, and by the
-  `.dyad`): 6.1.183 (`2b324ba3494a`), 5.15.216 (`a63afa1f9b12`), 5.10.265
-  (`a9ce31be4cb1`) — all tagged **2026-08-19** (commit dates 17:12–17:16
-  +0200), each its branch's first-fixed release. No not-affected lines
-  exist — the intro predates every maintained branch, and every branch now
-  carries the fix.
+  `.dyad`):
+  - All three tagged **2026-08-19** (commit dates 17:12–17:16 +0200),
+    each its branch's first-fixed release.
+  - 6.1.183 (`2b324ba3494a`).
+  - 5.15.216 (`a63afa1f9b12`).
+  - 5.10.265 (`a9ce31be4cb1`).
+  - No not-affected lines exist — the intro predates every maintained
+    branch, and every branch carries the fix.
 - **v7.2** GA tag (`8d3ae59288f1`) dated **2026-08-16**, confirmed via
   `~/src/linux/stable` to already contain `9b2854f86f0b` (landed at
   `v7.2-rc5`), so the new `linux-7.2.y` branch is fixed from its first
@@ -492,12 +495,12 @@ readers never need it.
     so status is a version compare against the branch's first-fixed
     release.
   - bullseye reached the end of its LTS window on **2026-08-31** (per
-    `wiki.debian.org/LTS`'s published schedule) still *vulnerable* — the
-    tracker's JSON no longer carries a `bullseye` release entry for this
-    CVE at all, and the `linux-6.1` opt-in source package (bullseye's
-    former 6.1-line backport) no longer appears in ftp-master madison.
-    No fix is coming for either kernel; a host still on bullseye should
-    move to bookworm or newer.
+    `wiki.debian.org/LTS`'s published schedule) still *vulnerable*; no
+    fix is coming for either kernel.
+  - The tracker's JSON carries no `bullseye` release entry for this CVE
+    at all.
+  - The `linux-6.1` opt-in source package (bullseye's former 6.1-line
+    backport) no longer appears in ftp-master madison.
   - The remaining rows' *Current kernel* values come from ftp-master
     madison and the tracker's `<suite>-security` `repositories` entries.
 - **Proxmox VE** (via `~/src/proxmox/pve-kernel` patches and
