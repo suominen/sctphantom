@@ -56,17 +56,21 @@ The rendered site is published at <https://kimmo.cloud/sctphantom/>.
 
 ## Your task
 
-Keep `site/content/_index.md` (the canonical tracker) up to date as the
-kernel fix is picked up by distro kernels.  After edits, rebuild with
-`make build` and publish with `make dist`.
+This tracker was archived on 2026-09-27 — it is no longer updated.
+Every maintained upstream stable line carries the `9b2854f86f0b` fix, as
+do Debian, Proxmox VE's maintained kernels (PVE 9's 7.0, PVE 8's 6.8),
+every tracked NixOS ref, Rocky Linux / RHEL 10/9/8 (the last rows to
+flip, on 2026-09-24/25), and all three AL2023 kernel streams.  The one
+row left `:x:` is PVE 8's end-of-life `proxmox-kernel-6.14` opt-in,
+which will never be fixed.  The auto-update (timer, unit symlinks,
+worktree, `auto-update` branch) has been torn down; do not resume
+routine updates.  If a genuinely new fact surfaces, edit
+`site/content/_index.md`, rebuild with `make build`, and publish with
+`make dist` — but the default state is frozen.
 
-A scheduled background agent runs against this repo to refresh the tracker
-on its own.  If you find the file has been edited since you last looked,
-that's likely why — re-read before assuming stale state.
-
-To retire (archive) this tracker — when every tracked distribution has
-shipped a fix, or the bug is otherwise no longer worth active tracking —
-follow `~/src/cve-tracker-template/LIFECYCLE.md` § "Retiring a tracker".
+The retirement followed `~/src/cve-tracker-template/LIFECYCLE.md`
+§ "Retiring a tracker" — the playbook for retiring (archiving) any of
+these trackers.
 
 ## Repo layout
 

@@ -10,6 +10,13 @@ cover:
   hiddenInSingle: true
 ---
 
+*This tracker is no longer updated.  Every maintained upstream stable
+line carries the fix, as do Debian, Proxmox VE's maintained kernels, every
+tracked NixOS ref, Rocky Linux / RHEL 10, 9 and 8, and all three Amazon
+Linux 2023 kernel streams.  The one remaining gap is Proxmox VE 8's
+end-of-life `proxmox-kernel-6.14` opt-in, which will never be fixed —
+upgrade to Proxmox VE 9.*
+
 ## Summary
 
 | Field | Detail |
@@ -21,7 +28,7 @@ cover:
 | Impact | Kernel heap UAF: a reproducible oops/panic (**DoS**), and per the discoverers a **local privilege escalation to root** and **container-to-host escape**. The chunk is processed in the receive/state-machine path, so it is reachable by any SCTP peer that completes an association with the ADD-IP (ASCONF) extension negotiated |
 | Upstream fix | [`9b2854f86f0b`][fix] (*sctp: don't free the ASCONF's own transport in DEL-IP processing*); first in **v7.2-rc5** |
 | Introduced | [`42e30bf3463c`][intro] in **v2.6.25** (2008) — the ASCONF DEL-IP handler has cached-and-reused the chunk's transport since SCTP ADD-IP support landed, so **essentially every SCTP-capable kernel is in-window** |
-| Affected window | **2.6.25 through 7.1** without the backport (and 7.2 before `-rc5`). Fixed in **v7.2-rc5** and the **6.1 / 5.15 / 5.10 / 6.6 / 6.12 / 6.18 / 7.1** stable backports — every maintained upstream kernel line now carries the fix (per-branch *First fixed* below); distro kernels still need to adopt it independently |
+| Affected window | **2.6.25 through 7.1** without the backport (and 7.2 before `-rc5`). Fixed in **v7.2-rc5** and the **6.1 / 5.15 / 5.10 / 6.6 / 6.12 / 6.18 / 7.1** stable backports — every maintained upstream kernel line carries the fix (per-branch *First fixed* below), and every tracked distribution kernel has adopted it except Proxmox VE 8's end-of-life 6.14 opt-in |
 | Discoverer | Corvus AI (Tencent Zhuque Lab / TencentOS Security Team) |
 | Public disclosure | 2026-08-06 ([Tencent Matrix write-up][writeup]) |
 | Public PoC | None public. The researchers report internal PoCs demonstrating local privilege escalation and container-to-host escape |
