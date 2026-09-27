@@ -3,7 +3,7 @@ title: "SCTPhantom — SCTP ASCONF transport use-after-free"
 description: "Linux kernel SCTP ASCONF DEL-IP use-after-free (CVE-2026-64564, SCTPhantom) — remote-triggerable transport UAF, local privilege escalation and container-to-host escape — distro patch status tracker"
 layout: "single"
 date: 2026-08-10
-lastmod: 2026-09-26
+lastmod: 2026-09-27
 cover:
   image: "sctphantom-tracker.png"
   alt: "SCTPhantom — Linux kernel SCTP ASCONF transport use-after-free tracker"
@@ -126,7 +126,7 @@ is fixed.
 | Linux kernel | 6.1.x | 6.1.188 | 6.1.183 | 2026-08-19 | :white_check_mark: Fixed — LTS |
 | Linux kernel | 5.15.x | 5.15.221 | 5.15.216 | 2026-08-19 | :white_check_mark: Fixed — LTS |
 | Linux kernel | 5.10.x | 5.10.270 | 5.10.265 | 2026-08-19 | :white_check_mark: Fixed — LTS |
-| Debian | sid (unstable) | 7.2.7-1 | 7.1.6-1 | 2026-08-04 | :white_check_mark: Fixed |
+| Debian | sid (unstable) | 7.2.8-1 | 7.1.6-1 | 2026-08-04 | :white_check_mark: Fixed |
 | Debian | forky (testing) | 7.2.6-1 | 7.1.6-1 | 2026-08-08 | :white_check_mark: Fixed |
 | Debian | 13 (trixie) | 6.12.107-1 | 6.12.101-1 | 2026-08-06 | :white_check_mark: Fixed — DSA-6415-1 |
 | Debian | 12 (bookworm) | 6.1.187-1 | 6.1.187-1 | 2026-09-08 | :white_check_mark: Fixed |
@@ -137,12 +137,12 @@ is fixed.
 | NixOS | master | 6.18.54 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
 | NixOS | release-26.05 | 6.18.54 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
 | NixOS | Unstable | 6.18.53 | 6.18.42 | 2026-08-04 | :white_check_mark: Fixed |
-| NixOS | Unstable (small) | 6.18.53 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
-| NixOS | Unstable (nixpkgs) | 6.18.53 | 6.18.42 | 2026-08-08 | :white_check_mark: Fixed |
-| NixOS | 26.05 | 6.18.52 | 6.18.42 | 2026-08-05 | :white_check_mark: Fixed |
-| NixOS | 26.05 (small) | 6.18.53 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
-| Rocky Linux / RHEL | 10 | 6.12.0-211.58.1.el10_2 | — | — | :x: Vulnerable — no RLSA yet |
-| Rocky Linux / RHEL | 9 | 5.14.0-687.51.1.el9_8 | 5.14.0-687.51.1.el9_8 | 2026-09-25 | :white_check_mark: Fixed — no RLSA yet |
+| NixOS | Unstable (small) | 6.18.54 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
+| NixOS | Unstable (nixpkgs) | 6.18.54 | 6.18.42 | 2026-08-08 | :white_check_mark: Fixed |
+| NixOS | 26.05 | 6.18.54 | 6.18.42 | 2026-08-05 | :white_check_mark: Fixed |
+| NixOS | 26.05 (small) | 6.18.54 | 6.18.42 | 2026-08-03 | :white_check_mark: Fixed |
+| Rocky Linux / RHEL | 10 | 6.12.0-211.60.1.el10_2 | 6.12.0-211.60.1.el10_2 | 2026-09-25 | :white_check_mark: Fixed — no RLSA yet |
+| Rocky Linux / RHEL | 9 | 5.14.0-687.52.1.el9_8 | 5.14.0-687.51.1.el9_8 | 2026-09-25 | :white_check_mark: Fixed — no RLSA yet |
 | Rocky Linux / RHEL | 8 | 4.18.0-553.168.1.el8_10 | 4.18.0-553.168.1.el8_10 | 2026-09-24 | :white_check_mark: Fixed — no RLSA yet |
 | Amazon Linux | 2023 (default) | 6.1.186-228.376 | 6.1.182-227.379 | 2026-08-31 | :white_check_mark: Fixed — ALAS2023-2026-2107 |
 | Amazon Linux | 2023 (6.12 opt-in) | 6.12.103-129.197 | 6.12.103-127.188 | 2026-08-31 | :white_check_mark: Fixed — ALAS2023-2026-2110 |
@@ -296,15 +296,15 @@ together with **RHSA-2026:70308** (RHEL **7 Extended Life Support
 `kernel-rt-3.10.0-1160.162.1.rt56.1314.el7` — even a kernel this old
 still carries SCTP and needed the same cherry-pick, underscoring that no
 in-support line predates the bug). **Every EL8/9/10 default minor Rocky
-tracks now has an upstream fix available.** Rocky's EL9 and EL8 rows have
-each rebuilt past their RHSA NVRs — EL9 at `5.14.0-687.51.1.el9_8`
-(matching RHSA-2026:71232's NVR exactly) and EL8 at
+tracks now has an upstream fix available, and Rocky has now rebuilt past
+every one of the three RHSA NVRs.** EL9 rebuilt at `5.14.0-687.51.1.el9_8`
+(matching RHSA-2026:71232's NVR exactly), EL8 at
 `4.18.0-553.168.1.el8_10` (Rocky skipped RHSA-2026:71213's exact
-`553.167.1.el8_10` NVR and shipped the next build instead) — confirmed by
-the shipped kernel's own `%changelog` naming CVE-2026-64564, ahead of
-Rocky's own advisory (RLSA), which is still outstanding for both. EL10
-has not yet rebuilt past `6.12.0-211.58.1.el10_2` to reach
-RHSA-2026:71233's `6.12.0-211.59.1.el10_2`. Default module posture
+`553.167.1.el8_10` NVR and shipped the next build instead), and EL10 at
+`6.12.0-211.60.1.el10_2` (Rocky likewise skipped RHSA-2026:71233's exact
+`211.59.1.el10_2` NVR) — each confirmed by the shipped kernel's own
+`%changelog` naming CVE-2026-64564, ahead of Rocky's own advisory (RLSA),
+which is still outstanding for all three. Default module posture
 is uniform across the family: on all three releases `sctp.ko` is not in
 the base kernel packages but in **`kernel-modules-extra`**, and that
 package installs `/etc/modprobe.d/sctp-blacklist.conf` (`blacklist sctp`,
@@ -628,7 +628,8 @@ readers never need it.
   EUS), **RHSA-2026:71233** (issued 2026-09-24, `kernel-0:6.12.0-211.59.1.el10_2`,
   product id `BaseOS-10.2.Z` — confirmed via the product tree as
   `Red Hat Enterprise Linux BaseOS (v. 10)`, i.e. EL10's current default
-  minor and the same `el10_2` build family Rocky 10 tracks),
+  minor and the same `el10_2` build family Rocky 10's now-fixed build
+  tracks),
   **RHSA-2026:69908** (`kernel-0:5.14.0-427.151.1.el9_4`, RHEL 9.4
   E4S), **RHSA-2026:70482** / **RHSA-2026:70483**
   (`kernel-0:5.14.0-284.193.1.el9_2` / `kernel-rt`, RHEL 9.2 E4S),
@@ -659,17 +660,19 @@ readers never need it.
   `/etc/modprobe.d/sctp-blacklist.conf` (`blacklist sctp`), suppressing
   autoload — earlier entries here misread this as EL10-only. The Rocky
   rows' *Current kernel* NVRs are read from BaseOS repodata
-  (`primary.xml.gz`, highest `rel`). EL9 and EL8 have each rebuilt past
-  their RHSA NVRs: the positive changelog cross-check (BaseOS
+  (`primary.xml.gz`, highest `rel`). EL9, EL8, and now EL10 have each
+  rebuilt past their RHSA NVRs: the positive changelog cross-check (BaseOS
   `*-other.xml.gz`, `xq` query for a `kernel` changelog entry naming
   CVE-2026-64564) confirms the fix in EL9's `5.14.0-687.51.1.el9_8`
   (matching RHSA-2026:71232's NVR exactly, first seen in the mirror
-  `Packages/k/` listing 2026-09-25) and in EL8's
+  `Packages/k/` listing 2026-09-25), in EL8's
   `4.18.0-553.168.1.el8_10` (Rocky skipped RHSA-2026:71213's exact
   `553.167.1.el8_10` NVR and shipped the next build instead, first seen
-  2026-09-24) — both ahead of Rocky's own RLSA, which is still
-  outstanding for each. EL10 remains at `6.12.0-211.58.1.el10_2`, below
-  RHSA-2026:71233's `211.59.1.el10_2` fix. No AlmaLinux errata or OSV
+  2026-09-24), and in EL10's `6.12.0-211.60.1.el10_2` (Rocky likewise
+  skipped RHSA-2026:71233's exact `211.59.1.el10_2` NVR and shipped the
+  next build instead, first seen in the mirror `Packages/k/` listing
+  2026-09-25) — all three ahead of Rocky's own RLSA, which is still
+  outstanding for each. No AlmaLinux errata or OSV
   entry for this CVE yet, so AlmaLinux is not ahead of the bare VEX
   record.
 - **Amazon Linux**: the AL2023 `updateinfo.xml.gz` now carries three
